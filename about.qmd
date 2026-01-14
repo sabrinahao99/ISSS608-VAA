@@ -1,9 +1,8 @@
 ---
-title: "About"
+title: "**About Me**"
 ---
 
-About this site
+Hi! I’m Zhiyi Hao, for short you can call me *Sabrina*.:)
 
-```{r}
-1 + 1
-```
+-   Email: zhiyi.hao.2025\@mitb.smu.edu.sg
+-   Phone: 80389179
