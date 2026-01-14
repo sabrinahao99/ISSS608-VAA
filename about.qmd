@@ -1,5 +1,5 @@
 ---
-title: "**About Me**"
+title: "About Me"
 ---
 
 Hi! I’m Zhiyi Hao, for short you can call me *Sabrina*.:)
