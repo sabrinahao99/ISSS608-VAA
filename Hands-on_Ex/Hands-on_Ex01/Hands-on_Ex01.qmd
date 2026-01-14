@@ -33,4 +33,18 @@ ggplot(data = exam_data,
   geom_bar()
 ```
 
-------------------------------------------------------------------------
+# Plotting histogram and use of aes()
+
+This code chunk is to change color of the histogram by aes()
+
+```{r}
+ggplot(data=exam_data, aes(x= MATHS, fill = GENDER)) + geom_histogram(bins=15, color="skyblue")
+```
+
+# Plotting density plot & boxplot
+
+This code chunk is to plot two density lines by using aes()
+
+```{r}
+ggplot(data = exam_data, aes(x = MATHS, colour = GENDER)) + geom_density() + scale_colour_manual(values = c( "Female" = "red", "Male" = "skyblue" ))
+```
