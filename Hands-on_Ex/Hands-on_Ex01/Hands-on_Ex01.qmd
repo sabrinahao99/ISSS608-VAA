@@ -1,6 +1,12 @@
 ---
 title: "Hands-on Exercise 1"
 author: "Zhiyi Hao"
+date: "2026/01/14"
+format:
+  html:
+    backgroundcolor: white
+    fontcolor: black
+    linkcolor: blue
 ---
 
 # Getting Started

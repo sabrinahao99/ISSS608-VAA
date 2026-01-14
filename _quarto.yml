@@ -19,6 +19,8 @@ format:
     theme:
       - minty
       - brand
+    fontsize: 1.2em
+    linestretch: 1.8
     css: styles.css
     toc: true
 
