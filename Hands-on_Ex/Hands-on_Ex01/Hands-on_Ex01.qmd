@@ -91,7 +91,7 @@ ggplot(data=exam_data,
   geom_point()
 ```
 
-# **Working with `stat()`**
+# Working with stat()
 
 add a stat\_() function and override the default geom
 
