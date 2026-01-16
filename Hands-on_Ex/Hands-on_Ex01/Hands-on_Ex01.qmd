@@ -33,6 +33,26 @@ ggplot(data = exam_data,
   geom_bar()
 ```
 
+# Plotting Geometric Objects: geom_dotplot
+
+This code chunk is used to plot a dot plot.
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x = MATHS)) +
+  geom_dotplot(dotsize = 0.5)
+```
+
+# Modifying a geometric object by changing geom()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS)) +
+  geom_histogram(bins=20,            
+                 color="black",      
+                 fill="light blue") 
+```
+
 # Plotting histogram and use of aes()
 
 This code chunk is to change color of the histogram by aes()
@@ -47,4 +67,123 @@ This code chunk is to plot two density lines by using aes()
 
 ```{r}
 ggplot(data = exam_data, aes(x = MATHS, colour = GENDER)) + geom_density() + scale_colour_manual(values = c( "Female" = "red", "Male" = "skyblue" ))
+```
+
+# Plotting Geometric Objects: geom_violin
+
+The code plots the distribution of Maths score by gender in violin plot by using geom_violin()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(y = MATHS, 
+           x= GENDER)) +
+  geom_violin()
+```
+
+# Plotting scatterplot
+
+The code chunk below plots a scatterplot showing the Maths and English grades of pupils by using geom_point()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS, 
+           y=ENGLISH)) +
+  geom_point()
+```
+
+# **Working with `stat()`**
+
+add a stat\_() function and override the default geom
+
+```{r}
+ggplot(data=exam_data, 
+       aes(y = MATHS, x= GENDER)) +
+  geom_boxplot()
+```
+
+# Adding best curve for scatterplot
+
+In the code chunk geom_smooth() is used to plot a best fit curve on the scatterplot
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS, y=ENGLISH)) +
+  geom_point() +
+  geom_smooth(size=0.5)
+```
+
+The default smoothing method can be overridden as shown below.
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS, 
+           y=ENGLISH)) +
+  geom_point() +
+  geom_smooth(method=lm, 
+              linewidth=0.5)
+```
+
+# Working with facet_wrap()
+
+The code chunk plots a trellis plot using facet-wrap()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS)) +
+  geom_histogram(bins=20) +
+    facet_wrap(~ CLASS)
+```
+
+# facet_grid() function
+
+The code chunk below plots a trellis plot using facet-wrap() The code chunk plots a trellis plot using facet_grid()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x= MATHS)) +
+  geom_histogram(bins=20) +
+    facet_grid(~ CLASS)
+```
+
+# Working with Coordinate
+
+The code chunk flips the horizontal bar chart into vertical bar chart by using coord_flip()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x=RACE)) +
+  geom_bar() +
+  coord_flip()
+```
+
+# Working with theme
+
+The code chunk plot a horizontal bar chart using theme_gray()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x=RACE)) +
+  geom_bar() +
+  coord_flip() +
+  theme_gray()
+```
+
+A horizontal bar chart plotted using theme_classic().
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x=RACE)) +
+  geom_bar() +
+  coord_flip() +
+  theme_classic()
+```
+
+A horizontal bar chart plotted using theme_minimal().
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x=RACE)) +
+  geom_bar() +
+  coord_flip() +
+  theme_minimal()
 ```
