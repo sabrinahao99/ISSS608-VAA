@@ -43,6 +43,17 @@ ggplot(data=exam_data,
   geom_dotplot(dotsize = 0.5)
 ```
 
+To avoid misleading, the code chunk contains 2 steps.`scale_y_continuous()` is used to turn off the y-axis, and *binwidth argument* is used to change the binwidth to 2.5.
+
+```{r}
+ggplot(data=exam_data, 
+       aes(x = MATHS)) +
+  geom_dotplot(binwidth=2.5,         
+               dotsize = 0.5) +      
+  scale_y_continuous(NULL,           
+                     breaks = NULL)
+```
+
 # Modifying a geometric object by changing geom()
 
 ```{r}
@@ -61,12 +72,21 @@ This code chunk is to change color of the histogram by aes()
 ggplot(data=exam_data, aes(x= MATHS, fill = GENDER)) + geom_histogram(bins=15, color="skyblue")
 ```
 
-# Plotting density plot & boxplot
+# Plotting geom() - density plot & boxplot
 
 This code chunk is to plot two density lines by using aes()
 
 ```{r}
 ggplot(data = exam_data, aes(x = MATHS, colour = GENDER)) + geom_density() + scale_colour_manual(values = c( "Female" = "red", "Male" = "skyblue" ))
+```
+
+The code chunk plots boxplots by using geom_boxplot()
+
+```{r}
+ggplot(data=exam_data, 
+       aes(y = MATHS,       
+           x= GENDER)) +    
+  geom_boxplot()  
 ```
 
 # Plotting Geometric Objects: geom_violin
@@ -93,14 +113,33 @@ ggplot(data=exam_data,
 
 # Working with stat()
 
-add a stat\_() function and override the default geom
+add a stat() function and override the default geom
 
 ```{r}
 ggplot(data=exam_data, 
        aes(y = MATHS, x= GENDER)) +
   geom_boxplot()
 ```
-
+The code chunk adds mean values by using stat_summary() function 
+```{r}
+ggplot(data=exam_data, 
+       aes(y = MATHS, x= GENDER)) +
+  geom_boxplot() +
+  stat_summary(geom = "point",       
+               fun = "mean",         
+               colour ="red",        
+               size=4)   
+```
+The code chunk adding mean values and overriding the default stat
+```{r}
+ggplot(data=exam_data, 
+       aes(y = MATHS, x= GENDER)) +
+  geom_boxplot() +
+  geom_point(stat="summary",        
+             fun="mean",           
+             colour="red",          
+             size=4)    
+```
 # Adding best curve for scatterplot
 
 In the code chunk geom_smooth() is used to plot a best fit curve on the scatterplot
