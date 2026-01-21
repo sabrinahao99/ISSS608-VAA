@@ -1,5 +1,5 @@
 ---
-title: "Hands-on_Ex02"
+title: "Hands-on Exercise 2"
 author: "Zhiyi Hao"
 date: "2026/01/21"
 format:
