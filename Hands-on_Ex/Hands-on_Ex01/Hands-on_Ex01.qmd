@@ -120,7 +120,9 @@ ggplot(data=exam_data,
        aes(y = MATHS, x= GENDER)) +
   geom_boxplot()
 ```
-The code chunk adds mean values by using stat_summary() function 
+
+The code chunk adds mean values by using stat_summary() function
+
 ```{r}
 ggplot(data=exam_data, 
        aes(y = MATHS, x= GENDER)) +
@@ -130,7 +132,9 @@ ggplot(data=exam_data,
                colour ="red",        
                size=4)   
 ```
+
 The code chunk adding mean values and overriding the default stat
+
 ```{r}
 ggplot(data=exam_data, 
        aes(y = MATHS, x= GENDER)) +
@@ -140,6 +144,7 @@ ggplot(data=exam_data,
              colour="red",          
              size=4)    
 ```
+
 # Adding best curve for scatterplot
 
 In the code chunk geom_smooth() is used to plot a best fit curve on the scatterplot
