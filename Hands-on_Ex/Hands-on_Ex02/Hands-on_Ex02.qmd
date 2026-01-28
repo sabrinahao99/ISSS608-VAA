@@ -110,7 +110,7 @@ p + theme_classic()
 
 Despite the different themes used, the underlying data representation remains unchanged.In univariate histograms, the visual differences are subtle because the themes primarily affect non-data elements such as the background, grid lines, and axis styles. In this example, the visual differences between `theme_bw()`, `theme_minimal()`, and `theme_classic()` are subtle,because the plot contains only one variable and has no legend.This demonstrates that ggplot2 themes modify non-data elements without affecting the data itself.
 
-## 2.4.1 Working with ggtheme package 
+## 2.4.1 Working with ggtheme package
 
 ggthemes provides ‘ggplot2’ themes that replicate the look of plots by Edward Tufte, Stephen Few, Fivethirtyeight, The Economist, ‘Stata’, ‘Excel’, and The Wall Street Journal, among others. In the example below, The Economist theme is used.
 
