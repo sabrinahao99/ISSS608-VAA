@@ -1,5 +1,5 @@
 ---
-title: "Take-home Exercise 1"
+title: "Take-home Exercise 1final"
 author: "Zhiyi Hao"
 date: "2026/02/05"
 format:
@@ -35,7 +35,7 @@ Based on the 2023 VNU Student Questionnaire Dataset, this post aims to reveal fo
 
 -   the distribution of academic performance (GPA)across different year students at Vietnam National University
 
--   the rrelationships between these academic performances and family socioeconomic status (parental education level), personal behavioral habits (time spent studying and social media), and perception varaibles.
+-   the relationships between these academic performances and family socioeconomic status (parental education level), personal behavioral habits (time spent studying and social media), and perception varaibles.
 
 # 2.Loading Packages
 
@@ -95,7 +95,7 @@ nrow(raw_dataset)
 
 We can find the duplicated record is 226 out of the raw data sample of 2170, however, there is no distinct record like ID in our dataset, we can't treat all duplicated data as the true duplicated ones. Since repeated response patterns may represent the true frequency in the population, duplication based solely on identical values in the survey variables could distort the empirical distribution and introduce bias into subsequent analyses. Therefore, we retained all records.
 
-# **4.Data Wrangling**
+# 4.Data Wrangling
 
 Since the raw_dataset contains a large number of numerical codes without labels, it is not suitable for direct analysis. Therefore, I strictly followed the official codebook and cleaned and standardized the data through the following steps.
 
@@ -107,7 +107,7 @@ First, I select some useful variables required for EDA process and ensure the ra
 
 -   Socioeconomic indicators (A.3, A.4, A.5): I excluded "policy support," "minority status," and "poverty status." This analysis emphasizes individual student behaviors more than macro-level "socioeconomic background factors."
 
--   Parental Occupation indicators (A.8, A.9): I selected "parents' education level" and excluded "parents' occupation." In educational research, education level is generally considered a more stable and explanatory indicator of family cultural capital (Sullivan, 2001).
+-   Parental Occupation indicators (A.8, A.9): I selected "parents' education level" and excluded "parents' occupation." In educational research, education level is generally considered a more stable and explanatory indicator of family cultural capital.
 
 Since most variables in the original dataset were numerical, I recoded them into meaningful and easily interpretable category labels according to the official coding manual. This step involved converting the raw data into ordinal factors (e.g., converting "1, 2, 3" into "none, moderate, very"), thus ensuring that subsequent visualizations and statistical tests were ordinal and valid.
 
@@ -253,7 +253,6 @@ ggplot(plot_data,
 
 I first defined a high GPA (same as year). A student's GPA was recorded as TRUE if it was in the range of "3.2-3.6 (Good)" or "≥3.6 (Excellent)," and as FALSE otherwise. This binary variable fairly compares the relationship between parental education level and GPA. Next, I summarized the data by Father_Edu_Label and Mother_Edu_Label, calculating the sample size and high GPA rate for each group. Then, to determine the baseline for the funnel plot, I calculated a weighted average of these rates with a weight of $1/se^2$ to ensure that groups with larger sample sizes and more stable estimates have a greater impact on the overall mean. Next, I generated 95% (dashed line) and 99.9% (solid line) confidence intervals to define the expected range of variation. Finally, I constructed the funnel plot using ggplot2, applied geom_text to add labels for each education group, and ensured readability by managing label overlap.
 
-::: panel-tabset
 Father's education background
 
 ```{r}
@@ -263,7 +262,7 @@ Father's education background
 #| fig-height: 6
 
 # compute high GPA rate
-high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excellent)")
+high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excl)")
 n_tab <- table(final_ggplot$Father_Edu_Label)
 rate_tab <- tapply(high_gpa, final_ggplot$Father_Edu_Label, mean, na.rm = TRUE)
 df <- data.frame(
@@ -285,7 +284,7 @@ number.ll999 <- fit.mean - 3.29 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
 number.ul999 <- fit.mean + 3.29 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
 dfCI <- data.frame(number.ll95, number.ul95, number.ll999, number.ul999, number.seq, fit.mean)
 # plot
-p1 <- ggplot(df_m, aes(x = Positive, y = rate)) +
+p1 <- ggplot(df, aes(x = Positive, y = rate)) +
   geom_point(alpha = 0.4, color = "red") +
   geom_text(aes(label = Group), vjust = -1, size = 3, check_overlap = TRUE) +
   geom_line(data = dfCI, aes(x = number.seq, y = number.ll95), 
@@ -321,7 +320,7 @@ Mother's education background
 #| fig-height: 6
 
 # compute 
-high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excellent)")
+high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excl)")
 n_tab_m <- table(final_ggplot$Mother_Edu_Label)
 rate_tab_m <- tapply(high_gpa, final_ggplot$Mother_Edu_Label, mean, na.rm = TRUE)
 
@@ -367,7 +366,6 @@ p2 <- ggplot(df_m, aes(x = Positive, y = rate)) +
 
 p2
 ```
-:::
 
 -   ::: {.callout-note icon="false"}
     ## 😺 Observations
@@ -457,11 +455,7 @@ ggtern(data = time_tri_mutated, aes(x = st_val, y = sm_val, z = fri_val, colour 
     subtitle = "Ternary plot shows the trade-off between Study, Social Media, and Friends",
     colour = "GPA Category"
   ) +
-  theme_rgbw()
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    plot.subtitle = element_text(size = 10, color = "gray30")
-  )
+    theme_rgbw()
 ```
 
 -   ::: {.callout-note icon="false"}
@@ -596,7 +590,7 @@ likert(Measure ~ .,
 
 ### Viz7: Does GPA have the relationship with perception variables?
 
-First, I selected all perceptual variables and GPA (num). Since Likert categorizes variables by class, I converted all variables into ordered numerical representations by **as.numeric** function. Then, I used **cor(..., method="spearman")** to generate the Spearman correlation matrix. Finally, I used the basic function **heatmap()** to visualize the correlation matrix, preserving the hierarchical clustering dendrogram to observe the similarity and clustering structure between variables.
+First, I selected all perceptual variables and GPA (num). Since Likert categorizes variables by class, I converted all variables into ordered numerical representations by **as.numeric** function. Then, I used **cor(method="spearman")** to generate the Spearman correlation matrix. Finally, I used the basic function **heatmap()** to visualize the correlation matrix, preserving the hierarchical clustering dendrogram to observe the similarity and clustering structure between variables.
 
 ```{r}
 #| echo: true
@@ -644,7 +638,7 @@ heatmap(
 
 # 7. Summary
 
-This paper's exploratory data visualization analysis goes beyond simply representing the data; it transforms tabular data into actionable behavioral insights. While the original statistical tests (e.g., Tables 4 and 7) confirm basic correlations, our visualization model further reveals the potential dynamics of how these variables interact in students' daily lives.
+This paper's exploratory data visualization analysis goes beyond simply representing the data; it transforms tabular data into actionable behavioral insights. While the original statistical tests (e.g., Tables 4 and 7 on the research paper <https://www.sciencedirect.com/science/article/pii/S2352340925001702>) confirm basic correlations, our visualization model further reveals the potential dynamics of how these variables interact in students' daily lives.
 
 <div>
 
@@ -685,7 +679,5 @@ This paper's exploratory data visualization analysis goes beyond simply represen
 # 8.References
 
 -   Prof Kam, Tin Seong. (2026). Visualising Distribution. *R for Visual Analytics.*<https://r4va.netlify.app/chap08>
-
--   Sullivan, Alice. (2001). Cultural Capital and Educational Attainment. *Sociology*.<https://www.jstor.org/stable/42856347?searchText=Cultural%20Capital%20and%20Educational%20Attainment&searchUri=%2Faction%2FdoBasicSearch%3FQuery%3DCultural%2BCapital%2Band%2BEducational%2BAttainment%26so%3Drel&ab_segments=0%2Fbasic_search_gsv2%2Fcontrol&refreqid=fastly-default%3A8af6c771bdbf1a4e8a7117eaffd826b2>
 
 -   Tran, Vinh Doan, Nguyen, Kim Son Thi, & Le, Diep Ngoc. (2025). Dataset of factors affecting learning outcomes of students at the University of Education, Vietnam National University, Hanoi. <https://www.sciencedirect.com/science/article/pii/S2352340925001702>
