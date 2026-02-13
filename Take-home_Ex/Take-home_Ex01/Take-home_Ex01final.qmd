@@ -1,0 +1,691 @@
+---
+title: "Take-home Exercise 1"
+author: "Zhiyi Hao"
+date: "2026/02/05"
+format:
+  html:
+    code-fold: show     
+    code-tools: true 
+    backgroundcolor: white
+    fontcolor: black
+    linkcolor: blue
+---
+
+# 1.Overview
+
+## 1.1 Background
+
+Nowadays, researchers have long been dedicated to researching the factors influencing student academic performance. The dataset used in this analysis comes from VNU University of Education and aims to comprehensively explore the deep relationship between various real-world factors and student academic achievement (GPA).
+
+The survey was conducted from March to June 2023, collecting 2,170 responses from students. The data primarily covers two core dimensions: 1) students' demographic characteristics and lifestyle habits (e.g., Academic Year, parental educational background, allocation of their time); 2) students' learning perceptions at university(e.g., feelings of teaching quality, facilities, influence from friends etc.).
+
+Through exploratory data analysis (EDA) of these different types of data, we hope to identify the key indicators may affectiing students' GPA and find relationships. This will not only provide school administrators with objective feedback but also help teachers and academic advisors better understand the factors influencing student performance, and also enabling them to take measures if needed to improve overall teaching effectiveness.
+
+## 1.2 The Data
+
+The data for this exercise is the Student questionnaire data(database paper) file in .xlsx format, retrieved from [Mendeley Data Repository](https://data.mendeley.com/datasets/23ppcdbmhc/1). ![](image1.png)
+
+Supplementary materials used in conjunction with dataset:
+
+-   [Codebook](https://data.mendeley.com/datasets/23ppcdbmhc/1)
+
+## 1.3 The Task
+
+Based on the 2023 VNU Student Questionnaire Dataset, this post aims to reveal followings by using appropriate **Exploratory Data Analysis (EDA) methods** and **the ggplot2 package**
+
+-   the distribution of academic performance (GPA)across different year students at Vietnam National University
+
+-   the rrelationships between these academic performances and family socioeconomic status (parental education level), personal behavioral habits (time spent studying and social media), and perception varaibles.
+
+# 2.Loading Packages
+
+In this exercise, several R packages will be used. They are listed in the table below:
+
+| Library | Description |
+|:-----------------------------------|:-----------------------------------|
+| [**tidyverse**](https://www.tidyverse.org/) | A collection of core packages used for data preparation and wrangling. |
+| [**knitr**](https://yihui.org/knitr/) | For dynamic report generation. |
+| [**patchwork**](https://patchwork.data-imaginist.com/) | For preparing composite figure created using ggplot2. |
+| [**ggthemes**](https://jrnold.github.io/ggthemes/) | Extra themes, geoms, and scales for ggplot2. |
+| [**ggridges**](https://wilkelab.org/ggridges/) | For ridgeline plots that create the impression of a mountain range.can be useful for visualising changes in distributions over time. |
+| [**ggdist**](https://mjskay.github.io/ggdist/) | For visualisations of distributions and uncertainty. Key package for creating Raincloud Plots. |
+| [**treemapify**](https://wilkox.org/treemapify/) | Provides 'ggplot2' geoms for drawing Treemaps, used for visualising hierarchical demographic data. |
+| [**ggrepel**](https://ggrepel.slowkow.com/) | Provides geoms for ggplot2 to repel overlapping text labels. Essential for annotating outliers. |
+| [**ggcorrplot**](http://www.sthda.com/english/wiki/ggcorrplot) | For visualizing a correlation matrix using ggplot2. |
+| [**ggnewscale**](https://eliocamp.github.io/ggnewscale/) | For defining scales in ggplot2. |
+| [**ggtext**](https://wilkelab.org/ggtext/) | Supports improved text rendering for ggplot2. |
+| [**ggpubr**](https://rpkgs.datanovia.com/ggpubr/) | Provides some easy-to-use functions for creating and customizing ‘ggplot2’- based publication ready plots. |
+| [**HH**](https://cran.r-project.org/web/packages/HH/HH.pdf) | particularly known for its likert() function which creates diverging stacked bar charts for Likert scale dataspecialized. |
+| [**ggtern**](https://cloud.r-project.org/web/packages/ggtern/ggtern.pdf) | a ggplot extension specially designed to plot ternary diagrams. The package will be used to plot static ternary plots. |
+| [**ggstatsplot**](https://indrajeetpatil.github.io/ggstatsplot/) | {ggstatsplot} is an extension of {ggplot2} package for creating graphics with details from statistical tests included in the information-rich plots themselves. |
+
+The following code chunk uses `p_load()` of [**pacman**](https://rpubs.com/akshaypatankar/594834) package to check if tidyverse packages are installed in the computer. If they are, the libraries will be called into R.
+
+```{r}
+pacman::p_load(tidyverse, knitr, patchwork, 
+               ggthemes, ggridges, ggdist, 
+               treemapify, ggrepel, ggcorrplot,
+               ggnewscale,ggtext,ggpubr,HH,ggtern,ggstatsplot)
+```
+
+# 3.Data Import
+
+In sections 3 and 4, I will explain all the steps of data processing — from reading the raw data to generating the final dataset. I will use the tidyverse package for data cleaning and readxl for reading the data.
+
+## 3.1 Importing .xlsx file
+
+The following code block uses the `read_excel()` function from the `readxl` package to import the original dataset. This data originates from the file `Database paper.xlsx`.
+
+```{r}
+library(readxl)
+raw_dataset <- read_excel("data/Database paper.xlsx")
+raw_dataset
+```
+
+This dataset contains 2,170 observations (rows) and 22 variables (columns). Each observation corresponds to a participating student or alumnus, and the variables cover students' demographic characteristics, family background, and perceptions of the school environment.
+
+## 3.2 Duplicates Check
+
+To ensure data quality, we need to check there are duplicated records in the dataset.
+
+```{r}
+sum(duplicated(raw_dataset))
+nrow(raw_dataset)
+```
+
+We can find the duplicated record is 226 out of the raw data sample of 2170, however, there is no distinct record like ID in our dataset, we can't treat all duplicated data as the true duplicated ones. Since repeated response patterns may represent the true frequency in the population, duplication based solely on identical values in the survey variables could distort the empirical distribution and introduce bias into subsequent analyses. Therefore, we retained all records.
+
+# **4.Data Wrangling**
+
+Since the raw_dataset contains a large number of numerical codes without labels, it is not suitable for direct analysis. Therefore, I strictly followed the official codebook and cleaned and standardized the data through the following steps.
+
+## 4.1 Variable Selection
+
+First, I select some useful variables required for EDA process and ensure the raw column names are consistently referenced. To ensure that the variables for subsequent visualization are cleaned, we should eliminate noise(drop useless variables). For the selection of direct variables, I chose to retain only those directly related to demographics, learning habits, and personal perceptions. In this step, I specifically excluded the following variables for the following reasons:
+
+-   Gender(A.2): To focus the analysis on universally applicable learning strategies and perceptual dimensions, gender was considered noise and therefore excluded.
+
+-   Socioeconomic indicators (A.3, A.4, A.5): I excluded "policy support," "minority status," and "poverty status." This analysis emphasizes individual student behaviors more than macro-level "socioeconomic background factors."
+
+-   Parental Occupation indicators (A.8, A.9): I selected "parents' education level" and excluded "parents' occupation." In educational research, education level is generally considered a more stable and explanatory indicator of family cultural capital (Sullivan, 2001).
+
+Since most variables in the original dataset were numerical, I recoded them into meaningful and easily interpretable category labels according to the official coding manual. This step involved converting the raw data into ordinal factors (e.g., converting "1, 2, 3" into "none, moderate, very"), thus ensuring that subsequent visualizations and statistical tests were ordinal and valid.
+
+```{r}
+final_ggplot <- raw_dataset
+
+final_ggplot$Year_Label <- factor(final_ggplot$Year, levels = 1:5, 
+    labels = c("First-year", "Second-year", "Third-year", "Fourth-year", "Graduated"))
+
+final_ggplot$Father_Edu_Label <- factor(final_ggplot$Father_Edu, levels = 1:6, 
+    labels = c("Primary", "Secondary", "High School", "College", "University/Grad", "Other"))
+
+final_ggplot$Mother_Edu_Label <- factor(final_ggplot$Mother_Edu, levels = 1:6, 
+    labels = c("Primary", "Secondary", "High School", "College", "University/Grad", "Other"))
+
+final_ggplot$Friends_Label <- ordered(final_ggplot$Time_Friends, levels = 1:5, 
+    labels = c("<1h", "1-2h", "2-3h", "3-4h", ">=4h"))
+
+final_ggplot$Social_Media_Label <- ordered(final_ggplot$Time_SocicalMedia, levels = 1:5, 
+    labels = c("<1h", "1-2h", "2-3h", "3-4h", ">=4h"))
+
+final_ggplot$Study_Time_Label <- ordered(final_ggplot$Time_Studying, levels = 1:5, 
+    labels = c("<2h", "2-4h", "4-6h", "6-8h", ">=8h"))
+
+final_ggplot$GPA_Label <- ordered(final_ggplot$GPA, levels = 1:5, 
+    labels = c("<2.0 (Poor)", "2.0–2.5 (Avg)", "2.5–3.2 (Fair)", "3.2–3.6 (Good)", ">=3.6 (Excl)"))
+
+gpa_map <- c(1.50, 2.25, 2.85, 3.40, 3.85)
+final_ggplot$GPA_Num <- gpa_map[as.numeric(as.character(final_ggplot$GPA))]
+
+final_ggplot$Adapt_Learning_Uni <- ordered(final_ggplot$Adapt_Learning_Uni, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$Study_Methods      <- ordered(final_ggplot$Study_Methods, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$SupportOf_Uni      <- ordered(final_ggplot$SupportOf_Uni, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$SupportOf_Lec      <- ordered(final_ggplot$SupportOf_Lec, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$Facilitie_Uni      <- ordered(final_ggplot$Facilitie_Uni, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$Quality_Lecturer   <- ordered(final_ggplot$Quality_Lecturer, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$TrainingCurriculum <- ordered(final_ggplot$TrainingCurriculum, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$Competitive_Class  <- ordered(final_ggplot$Competitive_Class, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+final_ggplot$InfuenceF_Friends  <- ordered(final_ggplot$InfuenceF_Friends, levels = 1:5, 
+                                           labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+#mapping GPA into numerical form GPA_Num
+final_ggplot$Study_Methods_Raw <- raw_dataset$Study_Methods
+final_ggplot$GPA_Raw <- raw_dataset$GPA
+gpa_map <- c(1.50, 2.25, 2.85, 3.40, 3.85)
+final_ggplot$GPA_Num <- gpa_map[as.numeric(as.character(final_ggplot$GPA_Raw))]
+final_ggplot$Study_Methods_Fix <- factor(final_ggplot$Study_Methods_Raw, 
+                                         levels = 1:5, 
+                                         labels = c("Not at all", "Little", "Moderate", "Quite", "Very"))
+
+```
+
+Note:Under is \<, Over is \>=, use symbols simplifies the final presentation.
+
+## 4.2 Final checks for dataset quality
+
+```{r}
+#check if GPA_Num exists and missing value
+summary(final_ggplot$GPA_Num)
+anyNA(final_ggplot)
+```
+
+The final checks confirmed that the dataset contained no missing values and no duplicate rows. Furthermore, all ordered variables were presented in the order of the official codebook.
+
+After doing these two checks, we can make sure the data quality is good(no missing value, normal distribution,factor order is correct) and it is applicable for EDA process.
+
+# 5.0 Exploratory Data Analysis (EDA)
+
+After data cleaning, we move on to the Exploratory Data Analysis (EDA). This chapter aims to use packages in R to create visualizations that reveal potential relationship in student demographics, behavioral habits, and academic performance.
+
+This section has two parts, Group A and Group B, which coresponds to section 5 Academic Performance and Demographic Characteristics and 6 Student Perceptions and Learning Environment. Let's start our analysis!
+
+# 5 Academic Performance and Demographic Characteristics
+
+## Viz1: Academic performance exhibits high median stability but increasing divergence in later study years
+
+To explore the evolution of GPA distribution across different grade levels, I first cleaned the raw data. I mapped the categorical variable GPA to numerical midpoints (e.g., mapping grade 1 to 1.50 and grade 5 to 3.85), making GPA an analyzable numerical score for easy visualization. Next, I used the ggridges package to create a ridge plot to show the probability density distribution of grades across grade levels. Then, I used stat_density_ridges to automatically calculate quantiles. The extreme 2.5% regions at both ends of the distribution are highlighted in red and blue in the plot. This approach not only visually presents the central tendency of grades across grade levels but also effectively identifies the proportion of students with abnormally high or low GPAs.
+
+```{r}
+#| echo: true
+#| warning: false
+# drop missing or NAN value
+plot_data <- final_ggplot[!is.na(final_ggplot$GPA_Num) & !is.na(final_ggplot$Year_Label), ]
+#stats(quantile)
+ggplot(plot_data, 
+       aes(x = GPA_Num, 
+           y = Year_Label, 
+           fill = factor(stat(quantile)))) + 
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability",
+    values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  
+  theme_ridges() +
+ labs(
+    title = "Distribution of Student GPA Scores by Academic Year",
+    subtitle = "Academic performance exhibits high median stability but increasing divergence in later study years",
+    x = "GPA Score (Mapping GPA category)",
+    y = "Academic Year"
+  )+
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 10, color = "gray30", margin = margin(b = 10)),
+    axis.title.x = element_text(size = 11, face = "plain"),
+    axis.title.y = element_text(size = 11, face = "plain"),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.position = "right"
+  )
+```
+
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
+
+    -   Overall, the GPA of students across all grades is around 3.0 (between Fair and Good), showing a significant peak. This indicates that the school's students have very stable academic performance, with no extremely low scores, and the overall teaching quality is good.
+
+    -   As students progress through the years, they should be more adapted to university life, but the red zone on the left remains stable across all grades, especially in the third year. The reason for such a high proportion may need to be explored in terms of student perception or other aspects, such as their level of adaptation.
+
+    -   Towards graduation, the density of the blue zone on the right increases slightly, and the curve slopes more pronounced to the right. This may be because students nearing graduation have found a better study method, thus learning better and faster, resulting in a higher probability of having a high GPA.
+    :::
+
+## Viz2: Higher parental education significantly boosts the probability of achieving a high GPA
+
+I first defined a high GPA (same as year). A student's GPA was recorded as TRUE if it was in the range of "3.2-3.6 (Good)" or "≥3.6 (Excellent)," and as FALSE otherwise. This binary variable fairly compares the relationship between parental education level and GPA. Next, I summarized the data by Father_Edu_Label and Mother_Edu_Label, calculating the sample size and high GPA rate for each group. Then, to determine the baseline for the funnel plot, I calculated a weighted average of these rates with a weight of $1/se^2$ to ensure that groups with larger sample sizes and more stable estimates have a greater impact on the overall mean. Next, I generated 95% (dashed line) and 99.9% (solid line) confidence intervals to define the expected range of variation. Finally, I constructed the funnel plot using ggplot2, applied geom_text to add labels for each education group, and ensured readability by managing label overlap.
+
+::: panel-tabset
+Father's education background
+
+```{r}
+#| echo: true
+#| warning: false
+#| fig-width: 10
+#| fig-height: 6
+
+# compute high GPA rate
+high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excellent)")
+n_tab <- table(final_ggplot$Father_Edu_Label)
+rate_tab <- tapply(high_gpa, final_ggplot$Father_Edu_Label, mean, na.rm = TRUE)
+df <- data.frame(
+  Group = names(n_tab),
+  Positive = as.numeric(n_tab),
+  rate = as.numeric(rate_tab)
+)
+
+# exclude the small size group
+df <- df[df$Positive >= 5, ]
+df$rate.se <- sqrt((df$rate * (1 - df$rate)) / df$Positive)
+#compute fit.mean
+fit.mean <- weighted.mean(df$rate, 1 / df$rate.se^2)
+# Calculate lower and upper limits for 95% and 99.9% CI
+number.seq <- seq(1, max(df$Positive), 1)
+number.ll95  <- fit.mean - 1.96 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
+number.ul95  <- fit.mean + 1.96 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
+number.ll999 <- fit.mean - 3.29 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
+number.ul999 <- fit.mean + 3.29 * sqrt((fit.mean * (1 - fit.mean)) / number.seq)
+dfCI <- data.frame(number.ll95, number.ul95, number.ll999, number.ul999, number.seq, fit.mean)
+# plot
+p1 <- ggplot(df_m, aes(x = Positive, y = rate)) +
+  geom_point(alpha = 0.4, color = "red") +
+  geom_text(aes(label = Group), vjust = -1, size = 3, check_overlap = TRUE) +
+  geom_line(data = dfCI, aes(x = number.seq, y = number.ll95), 
+            linewidth = 0.4, colour = "grey40", linetype = "dashed") +
+  geom_line(data = dfCI, aes(x = number.seq, y = number.ul95), 
+            linewidth = 0.4, colour = "grey40", linetype = "dashed") +
+  geom_line(data = dfCI, aes(x = number.seq, y = number.ll999), 
+            linewidth = 0.4, colour = "grey40") +
+  geom_line(data = dfCI, aes(x = number.seq, y = number.ul999), 
+            linewidth = 0.4, colour = "grey40") +
+  geom_hline(data = dfCI, aes(yintercept = fit.mean), 
+             linewidth = 0.4, colour = "grey40") +
+  coord_cartesian(ylim = c(0, 1)) +
+  annotate("text", x = max(df$Positive)*0.95, y = fit.mean + 0.05, label = "95%", size = 3, colour = "grey40") + 
+  annotate("text", x = max(df$Positive)*0.95, y = fit.mean + 0.15, label = "99.9%", size = 3, colour = "grey40") + 
+  ggtitle("High GPA Rate by Father's Educational Background") +
+  xlab("Sample Size") + 
+  ylab("High GPA Rate (>= 3.2)") +
+  theme_light() +
+  theme(plot.title = element_text(size = 12, face = "bold"),
+        legend.position = "none") 
+
+p1
+
+```
+
+Mother's education background
+
+```{r}
+#| echo: true
+#| warning: false
+#| fig-width: 10
+#| fig-height: 6
+
+# compute 
+high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excellent)")
+n_tab_m <- table(final_ggplot$Mother_Edu_Label)
+rate_tab_m <- tapply(high_gpa, final_ggplot$Mother_Edu_Label, mean, na.rm = TRUE)
+
+df_m <- data.frame(
+  Group = names(n_tab_m),
+  Positive = as.numeric(n_tab_m),
+  rate = as.numeric(rate_tab_m)
+)
+df_m <- df_m[df_m$Positive >= 5, ]
+df_m$rate.se <- sqrt((df_m$rate * (1 - df_m$rate)) / df_m$Positive)
+#compute fit.mean
+fit.mean_m <- weighted.mean(df_m$rate, 1 / df_m$rate.se^2)
+# Calculate lower and upper limits for 95% and 99.9% CI
+number.seq <- seq(1, max(df_m$Positive), 1)
+number.ll95  <- fit.mean_m - 1.96 * sqrt((fit.mean_m * (1 - fit.mean_m)) / number.seq)
+number.ul95  <- fit.mean_m + 1.96 * sqrt((fit.mean_m * (1 - fit.mean_m)) / number.seq)
+number.ll999 <- fit.mean_m - 3.29 * sqrt((fit.mean_m * (1 - fit.mean_m)) / number.seq)
+number.ul999 <- fit.mean_m + 3.29 * sqrt((fit.mean_m * (1 - fit.mean_m)) / number.seq)
+dfCI_m <- data.frame(number.ll95, number.ul95, number.ll999, number.ul999, number.seq, fit.mean_m)
+#plot
+p2 <- ggplot(df_m, aes(x = Positive, y = rate)) +
+  geom_point(alpha = 0.4, color = "red") +
+  geom_text(aes(label = Group), vjust = -1, size = 3, check_overlap = TRUE) +
+  geom_line(data = dfCI_m, aes(x = number.seq, y = number.ll95), 
+            linewidth = 0.4, colour = "grey40", linetype = "dashed") +
+  geom_line(data = dfCI_m, aes(x = number.seq, y = number.ul95), 
+            linewidth = 0.4, colour = "grey40", linetype = "dashed") +
+  geom_line(data = dfCI_m, aes(x = number.seq, y = number.ll999), 
+            linewidth = 0.4, colour = "grey40") +
+  geom_line(data = dfCI_m, aes(x = number.seq, y = number.ul999), 
+            linewidth = 0.4, colour = "grey40") +
+  geom_hline(data = dfCI_m, aes(yintercept = fit.mean_m), 
+             linewidth = 0.4, colour = "grey40") +
+  coord_cartesian(ylim = c(0, 1)) +
+  annotate("text", x = max(df_m$Positive)*0.95, y = fit.mean_m + 0.05, label = "95%", size = 3, colour = "grey40") + 
+  annotate("text", x = max(df_m$Positive)*0.95, y = fit.mean_m + 0.15, label = "99.9%", size = 3, colour = "grey40") + 
+  ggtitle("High GPA Rate by Mother's Educational Background") +
+  xlab("Sample Size (n)") + 
+  ylab("High GPA Rate (>= 3.2)") +
+  theme_light() +
+  theme(plot.title = element_text(size = 12, face = "bold"),
+        legend.position = "none") 
+
+p2
+```
+:::
+
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
+
+    -   Both graphs show that the points for the University/Graduate education group are generally higher, while those for Primary School/Secondary School are lower. This suggests strongly a positive correlation between parental education level and the probability of their child achieving a high GPA.
+
+    -   Furthermore, most points fall within the 95%/99% threshold, indicating no significant differences within the sample size and normal levels compared to the overall average.
+
+    -   From an overall perspective, therefore, we can conclude that while there is a trend where higher parental education levels generally correlate with higher GPA rates.
+    :::
+
+## Viz3: Mother's education shows a more consistent impact on student GPA
+
+First, we need to process the fields – defining High GPA. This requires converting the original GPA_Cat into a binary variable, where high rate means: when a student's GPA falls within "3.2–\<3.6 (Good)" or "≥3.6 (Excellent)," it is recorded as TRUE; otherwise, it is FALSE. This can be used to compare the high GPA performance of different groups. Next, we group by parent's education level and calculate the High GPA rate. First, we group separately for Father_Edu / Mother_Edu, calculating n (sample size) and rate. Then, we calculate the overall mean, using weights of 1 / rate.se\^2 to give higher weights to groups with larger sample sizes and more stable estimates. Then, we generate the 95% / 99% confidence limits for the funnel. Finally, we use the above output to generate the plot. In addition to **ggplot**, **ggrepel** is also used to prevent overlap.
+
+```{r}
+#| echo: true
+#| warning: false
+#| fig-width: 14
+#| fig-height: 8
+p_fa_tail <- ggplot(plot_data, 
+                   aes(x = GPA_Num, y = Father_Edu_Label, 
+                       fill = 0.5 - abs(0.5 - stat(ecdf)))) + 
+  stat_density_ridges(geom = "density_ridges_gradient", 
+                      calc_ecdf = TRUE) +
+  scale_fill_viridis_c(name = "Tail Prob.", 
+                       direction = -1,
+                       option = "mako") + 
+  theme_ridges() +
+  labs(title = "Father's Education", 
+       x = "GPA Score", y = "Education Level") +
+  theme(legend.position = "none")
+p_mo_tail <- ggplot(plot_data, 
+                   aes(x = GPA_Num, y = Mother_Edu_Label, 
+                       fill = 0.5 - abs(0.5 - stat(ecdf)))) +
+  stat_density_ridges(geom = "density_ridges_gradient", 
+                      calc_ecdf = TRUE) +
+  scale_fill_viridis_c(name = "Tail Prob.", 
+                       direction = -1,
+                       option = "mako") +
+  theme_ridges() +
+  labs(title = "Mother's Education", 
+       x = "GPA Score", y = "") +
+  theme(legend.position = "right")
+all_plot_tail <- p_fa_tail + p_mo_tail + 
+  plot_annotation(
+    title = "Student Probability Distribution of GPA by Parental Education",
+    subtitle = "Comparison of GPA distribution shifts, highlighting the narrower variance and stronger core concentration in mother's education groups",
+    theme = theme(plot.title = element_text(size = 16, face = "bold"))
+  )
+
+all_plot_tail
+```
+
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
+
+    -   First, we've just observed from the tunnel plot that the darkest areas of highest student density show a continuous rightward shift as parental education levels increase. This further confirms our assessment that higher parental education levels are more conducive to cultivating top students and also help prevent children from achieving excessively low grades.
+
+    -   Comparing the two plots, the darkest core area for mothers appears more compact and sharper than for fathers. Furthermore, the high density near the median suggests that mothers' education levels may play a more significant role in students' GPAs than fathers'.
+    :::
+
+## Viz4: High GPA students spent more time on study while spent less on social media
+
+Here, I use a **ternary plot** to show the proportions of students spending time on three categories of daily activities (studying/social media/going out with friends). I also color-code points according to different GPA categories to reflect the distribution differences among different GPA categories. The implementation process is as follows: First, I convert the grouping intervals of the three time variables into midpoints for easier comparison, based on the official codebook. For example, social media and going out with friends are 0.5/1.5/2.5/3.5/4.5, while study time—less than 2 hours of study time—is 1, and so on, 3/5/7/9. Then, I obtain three new variables, sm_new, fri_new, and st_new, from the defined midpoints. By calculating the total time (total), and dividing the three new variables by total, I obtain their respective proportions, sm_p, fri_p, and st_p. Finally, I convert GPA_Cat into a factor, use **ggtern()** to draw the plot, and color-code it according to GPA category to observe the clustering trend of different GPA groups in the three types of time allocation.
+
+```{r}
+#| echo: true
+#| message: false
+#| fig-width: 13
+midp_sm_fri <- c(0.5, 1.5, 2.5, 3.5, 4.5) 
+midp_study  <- c(1, 3, 5, 7, 9)
+time_tri_mutated <- final_ggplot %>%
+  mutate(
+    # turn categorical variable into midpoint value
+    sm_val = midp_sm_fri[as.integer(Time_SocicalMedia)],
+    fri_val = midp_sm_fri[as.integer(Time_Friends)],
+    st_val  = midp_study[as.integer(Time_Studying)],
+    TOTAL = sm_val + fri_val + st_val
+  ) %>%
+  filter(TOTAL > 0) 
+#plot 
+ggtern(data = time_tri_mutated, aes(x = st_val, y = sm_val, z = fri_val, colour = GPA_Label)) +
+  geom_point(alpha = 0.6, size = 2) +
+  labs(
+    title = "High GPA students spent more time on study while spent less on social media",
+    subtitle = "Ternary plot shows the trade-off between Study, Social Media, and Friends",
+    colour = "GPA Category"
+  ) +
+  theme_rgbw()
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, color = "gray30")
+  )
+```
+
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
+
+    -   As can be seen from the distribution of the data points, most points are clearly clustered near the Social Media area, while there is almost no clustering near the Study and Outings locations. This indicates that most students in the sample spend their time on social media, with relatively less time allocated to studying and outings.
+
+    -   At the GPA category level, the distribution of points within each subcategory has a high degree of overlap, and the hypothetical scenario of "high GPA being significantly closer to the learning peak" does not occur. Here we can conclude that judging by the proportion of time spent near the midpoint of the interval, the differences in GPA between groups may be weak. Further statistical tests are needed to confirm this (testing each of the three variables against the GPA Category will yield a more rigorous conclusion).
+    :::
+
+### Viz5: Does high GPA students spent less time on social media and more on study?
+
+First, I use **ggbetweenstats()** to test and display the differences between the three time variables and GPA groups. Since the upper limits of the scales for the three time variables are inconsistent (the highest for study time is "≥8 hours", while the highest for others is "\>4 hours"), to ensure comparability, I converted each category to an **interval midpoint** according to the official codebook, thus unifying the unit of measurement to "hours". After mapping the midpoints, I then generated three numerical variables—Study_hours, Media_hours, and Friends_hours—based on the selected fields, and performed tests with GPA_Cat as the grouping variable (x) and time as y.
+
+For statistical testing, considering that the distribution of the time variables may be non-normal and that the sample sizes between groups are unbalanced, I still used the **Kruskal-Wallis nonparametric test** to attempt to test the differences in time allocation among different GPA groups.
+
+```{r}
+#| echo: true
+#| message: false
+#| fig-width: 12
+# use mutate
+df_time_analysis <- final_ggplot %>%
+  mutate(
+    st_hours  = midp_study[as.integer(Time_Studying)],
+    sm_hours  = midp_sm_fri[as.integer(Time_SocicalMedia)],
+    fri_hours = midp_sm_fri[as.integer(Time_Friends)],
+    TOTAL     = st_hours + sm_hours + fri_hours
+  ) %>%
+  filter(TOTAL > 0)
+# use ggbetweenstats 
+viz_study <- ggbetweenstats(
+  data = df_time_analysis,
+  x = GPA_Label,
+  y = st_hours,
+  type = "np", #non-parametric
+  messages = FALSE
+) + labs(
+  title = "Study hours across GPA categories",
+  x = "GPA Category", 
+  y = "Study Time (hours)"
+)
+
+viz_media <- ggbetweenstats(
+  data = df_time_analysis,
+  x = GPA_Label,
+  y = sm_hours,
+  type = "np",
+  messages = FALSE
+) + labs(
+  title = "Social media time across GPA categories",
+  x = "GPA Category", 
+  y = "Social Media Time (hours)"
+)
+
+viz_friends <- ggbetweenstats(
+  data = df_time_analysis,
+  x = GPA_Label,
+  y = fri_hours,
+  type = "np",
+  messages = FALSE
+) + labs(
+  title = "Time spent with friends across GPA categories",
+  x = "GPA Category", 
+  y = "Friends Time (hours)"
+)
+#patchwork
+(viz_study) / (viz_media | viz_friends)
+```
+
+::: {.callout-note icon="false"}
+## 😺 Observations
+
+To compare students’ time-use distributions across GPA groups, we applied the Kruskal–Wallis (non-parametric) test. All three time variables were statistically significant across GPA categories. • Study time: Median study time was 9 hours for every GPA group, mainly because many students fall into the ≥8 hours band. The clearest difference is that the lower-GPA group has a higher share of students with shorter study time. • Social media time: The lower-GPA group shows a higher median social media time, suggesting they spend more time on social media.
+
+• Friends time: Median differences are small; significance indicates only a weak relationship with GPA. Overall, effect sizes are small, meaning differences are modest and driven more by distributional shifts than large between-group gaps.
+:::
+
+## 6 Student Perceptions and Learning Environment
+
+In section 5, we explored the relationship and differences between behavior and GPA. Now, let's move on to the next section on perception. After completing the previous section, I couldn't help but wonder: besides behavior, are there also systemic differences between perceptual experience and GPA? Which perceptual dimensions are most relevant?
+
+### Viz6: Students are most satisfied with school but personal habits still decides at certain cases
+
+This figure uses **HH** to plot, illustrating the frequency distribution of students' responses to eight learning perception items on a 1–5 Likert scale. First, the eight variables (table b) were extracted from final_ggplot, and then convert the wide table to a long table, resulting in two columns: Measure and Response. I then created a contingency table for these two columns, converting each row to a percentage. This was done to eliminate the impact of sample size differences on the graph's scale. Finally, I used the HH::**likert()** function to plot the Diverging Stacked Bar, using percentages as a uniform measure to directly show the differences and frequency distribution of each variable.
+
+```{r}
+#| echo: true
+#| fig-width: 12
+#| fig-height: 10
+survey_vars <- c("Study_Methods", "SupportOf_Uni", "SupportOf_Lec", "Facilitie_Uni", 
+                 "Quality_Lecturer", "TrainingCurriculum", "Competitive_Class", "InfuenceF_Friends")
+#prepare long table
+survey_long <- final_ggplot[, survey_vars] %>%
+  gather(measure, response)
+#Converting to factor
+survey_long$measure <- as.factor(survey_long$measure)
+survey_long$response <- as.factor(survey_long$response)
+# Creating the contingency table
+survey_df <- table(survey_long$measure, survey_long$response) %>%
+  as.data.frame.matrix()
+# Changing the column name
+colnames(survey_df) <- c("Not at all", "Little", "Moderate", "Quite", "Very")
+
+rownames(survey_df) <- c("Class Competition", "University Facilities", "Peer Influence", 
+                         "Lecturer Support", "Lecturer Quality", "Study Methods", 
+                         "University Support", "Training Curriculum")
+# Changing the dataframe row name
+survey_df <- tibble::rownames_to_column(survey_df, var = "Measure")
+# plot using HH package
+likert(Measure ~ ., 
+       data = survey_df, 
+       ylab = NULL,
+       ReferenceZero = 3, 
+       as.percent = TRUE,
+       positive.order = TRUE, 
+       main = list(" Most of Students are generally satisfied with Learning Perceptions", x = unit(.55, "npc")), 
+       sub = list("Satisfaction Rating (1-5 Scale)", x = unit(.57, "npc")),
+       xlim = c(-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100),
+       strip = FALSE)
+
+```
+
+-   ::: panel-tabset
+    -   ::: {.callout-note icon="false"}
+        ## 😺 Observations
+
+        -   Overall, the eight variables related to learning perceptions are significantly biased towards the positive: "very" generally accounts for a larger proportion than "not at all," indicating respondents have a positive evaluation of the school's environment and support. The proportion of "very" is large for teaching-related dimensions, indicating respondents are satisfied with these variables. Conversely, proportions of "Moderate" and "little" are relatively high for "Study_Methods" and "influence from friends," indicating these factors are more likely related to personal habits.
+
+        -   This leads to a conclusion that respondents are generally satisfied with learning perceptions, but some factors still depend on individual differences. Besides, it also provides an overview for subsequent analysis of the relationship between perception variables and GPA.
+        :::
+    :::
+
+### Viz7: Does GPA have the relationship with perception variables?
+
+First, I selected all perceptual variables and GPA (num). Since Likert categorizes variables by class, I converted all variables into ordered numerical representations by **as.numeric** function. Then, I used **cor(..., method="spearman")** to generate the Spearman correlation matrix. Finally, I used the basic function **heatmap()** to visualize the correlation matrix, preserving the hierarchical clustering dendrogram to observe the similarity and clustering structure between variables.
+
+```{r}
+#| echo: true
+#| fig-width: 12
+#| fig-height: 10
+# selecting vars
+var_list <- c("GPA_Num", "Adapt_Learning_Uni", "Study_Methods", "SupportOf_Uni", 
+              "SupportOf_Lec", "Facilitie_Uni", "Quality_Lecturer", 
+              "TrainingCurriculum", "Competitive_Class", "InfuenceF_Friends")
+correl_var <- final_ggplot[, var_list]
+# turn into numerical as.numeric
+correl_var$GPA_Num           <- as.numeric(as.factor(correl_var$GPA_Num))
+correl_var$Adapt_Learning_Uni <- as.numeric(as.factor(correl_var$Adapt_Learning_Uni))
+correl_var$Study_Methods     <- as.numeric(as.factor(correl_var$Study_Methods))
+correl_var$SupportOf_Uni     <- as.numeric(as.factor(correl_var$SupportOf_Uni))
+correl_var$SupportOf_Lec     <- as.numeric(as.factor(correl_var$SupportOf_Lec))
+correl_var$Facilitie_Uni     <- as.numeric(as.factor(correl_var$Facilitie_Uni))
+correl_var$Quality_Lecturer  <- as.numeric(as.factor(correl_var$Quality_Lecturer))
+correl_var$TrainingCurriculum <- as.numeric(as.factor(correl_var$TrainingCurriculum))
+correl_var$Competitive_Class <- as.numeric(as.factor(correl_var$Competitive_Class))
+correl_var$InfuenceF_Friends <- as.numeric(as.factor(correl_var$InfuenceF_Friends))
+
+# spearman matrix
+wh_matrix <- cor(correl_var, method = "spearman")
+wh_matrix[is.na(wh_matrix)] <- 0
+
+# plot heatmap
+heatmap(
+  wh_matrix,
+  Rowv = NA, Colv = NA,         
+  scale = "none", 
+  cexRow = 0.9, cexCol = 0.9,
+  margins = c(12, 10),
+  main = "Does GPA have the relationship with perception variables?"
+)
+```
+
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
+
+    -   We can easily observe significant positive correlations among the nine learning perception variables (darker areas), indicating that these perception dimensions are interdependent and related. For example, "school support/teacher support/curriculum and facilities" tend to cluster together, suggesting a high degree of consistency in students' overall evaluations of the learning environment and teachers.
+
+    -   Notably, the GPA_Num row/column is very light in color, indicating almost no correlation between GPA and the learning perception variables. The overall trend is that the perception variables have a strong synergistic effect, while GPA has virtually no relationship with any single perception variable.
+    :::
+
+# 7. Summary
+
+This paper's exploratory data visualization analysis goes beyond simply representing the data; it transforms tabular data into actionable behavioral insights. While the original statistical tests (e.g., Tables 4 and 7) confirm basic correlations, our visualization model further reveals the potential dynamics of how these variables interact in students' daily lives.
+
+<div>
+
+-   <div>
+
+    ## 7.1 Key Findings:
+
+    -   Table 3 shows that most students' GPAs hover around 3.0 ("Good" to "Excellent"), while the ridgeline plot visualizes a phenomenon: as students approach graduation, the distribution of high-achieving students becomes significantly more concentrated, suggesting a unique adaptation curve that the original mean cannot capture.
+
+    -   Table 4 shows that both parents' educational backgrounds are significantly correlated with GPA. Similarly, the funnel density plot reveals a deeper, clearer, and more concentrated impact of maternal education on students' academic performance, preventing extremely low scores.
+
+    -   Table 1 shows that over 82% of students study for more than 8 hours a day. Conversely, our ternary plot and KW test box plot reveal a key paradox: the length of study time does not guarantee a high GPA. The real difference lies in social media. It can be seen that the median time spent on social media is significantly higher among those with lower GPAs, reducing their substantial study time.
+
+    -   Table 2 highlights the generally positive student satisfaction with university facilities and lecturer quality. However, based on Likert distribution and correlation heatmaps (inspired by the weak Pearson correlation in Table 5), GPA is not correlated with students' positive evaluations of campus facilities/faculty; instead, individual study methods and adaptability deserve attention.
+
+    -   
+
+    </div>
+
+</div>
+
+<div>
+
+-   <div>
+
+    ## 7.2 Recommendations:
+
+    -   Students' average study time exceeds 8 hours, so the time aspect is not the problem; the more important issue is the quality. Future surveys could focus on questions such as how many hours of focused study time are taken (without interruptions).
+
+    -   Living in the digital age, we must acknowledge that social media occupies a significant portion of students' time. Therefore, schools should take action to restrict some social media use (e.g., prohibiting mobile phones on campus), which could significantly improve students' average GPA.
+
+    -   In addition to the school's own advantages (teachers, facilities), universities should pay more attention to the learning methods and adaptation of students with low GPAs or lower-year students, provide more psychological counseling and outreach activities, and improve students' satisfaction with other perceived factors.
+
+    </div>
+
+</div>
+
+# 8.References
+
+-   Prof Kam, Tin Seong. (2026). Visualising Distribution. *R for Visual Analytics.*<https://r4va.netlify.app/chap08>
+
+-   Sullivan, Alice. (2001). Cultural Capital and Educational Attainment. *Sociology*.<https://www.jstor.org/stable/42856347?searchText=Cultural%20Capital%20and%20Educational%20Attainment&searchUri=%2Faction%2FdoBasicSearch%3FQuery%3DCultural%2BCapital%2Band%2BEducational%2BAttainment%26so%3Drel&ab_segments=0%2Fbasic_search_gsv2%2Fcontrol&refreqid=fastly-default%3A8af6c771bdbf1a4e8a7117eaffd826b2>
+
+-   Tran, Vinh Doan, Nguyen, Kim Son Thi, & Le, Diep Ngoc. (2025). Dataset of factors affecting learning outcomes of students at the University of Education, Vietnam National University, Hanoi. <https://www.sciencedirect.com/science/article/pii/S2352340925001702>
