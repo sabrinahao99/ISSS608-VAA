@@ -577,7 +577,6 @@ likert(Measure ~ .,
        strip = FALSE)
 
 ```
-
 -   ::: panel-tabset
     -   ::: {.callout-note icon="false"}
         ## 😺 Observations
@@ -653,8 +652,6 @@ This paper's exploratory data visualization analysis goes beyond simply represen
     -   Table 1 shows that over 82% of students study for more than 8 hours a day. Conversely, our ternary plot and KW test box plot reveal a key paradox: the length of study time does not guarantee a high GPA. The real difference lies in social media. It can be seen that the median time spent on social media is significantly higher among those with lower GPAs, reducing their substantial study time.
 
     -   Table 2 highlights the generally positive student satisfaction with university facilities and lecturer quality. However, based on Likert distribution and correlation heatmaps (inspired by the weak Pearson correlation in Table 5), GPA is not correlated with students' positive evaluations of campus facilities/faculty; instead, individual study methods and adaptability deserve attention.
-
-    -   
 
     </div>
 
