@@ -519,7 +519,11 @@ viz_friends <- ggbetweenstats(
 ::: {.callout-note icon="false"}
 ## 😺 Observations
 
-To compare students’ time-use distributions across GPA groups, we applied the Kruskal–Wallis (non-parametric) test. All three time variables were statistically significant across GPA categories. • Study time: Median study time was 9 hours for every GPA group, mainly because many students fall into the ≥8 hours band. The clearest difference is that the lower-GPA group has a higher share of students with shorter study time. • Social media time: The lower-GPA group shows a higher median social media time, suggesting they spend more time on social media.
+To compare students’ time-use distributions across GPA groups, we applied the Kruskal–Wallis (non-parametric) test. All three time variables were statistically significant across GPA categories.
+
+• Study time: Median study time was 9 hours for every GPA group, mainly because many students fall into the ≥8 hours band. The clearest difference is that the lower-GPA group has a higher share of students with shorter study time.
+
+• Social media time: The lower-GPA group shows a higher median social media time, suggesting they spend more time on social media.
 
 • Friends time: Median differences are small; significance indicates only a weak relationship with GPA. Overall, effect sizes are small, meaning differences are modest and driven more by distributional shifts than large between-group gaps.
 :::
@@ -568,8 +572,6 @@ likert(Measure ~ .,
        strip = FALSE)
 
 ```
-
--   ::: panel-tabset
     -   ::: {.callout-note icon="false"}
         ## 😺 Observations
 
