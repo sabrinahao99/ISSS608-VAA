@@ -377,7 +377,7 @@ First, we need to process the fields – defining High GPA. This requires conver
 #| warning: false
 #| fig-width: 14
 #| fig-height: 8
-p_fa_tail <- ggplot(plot_data, 
+p_fa_tail <- ggplot(final_ggplot, 
                    aes(x = GPA_Num, y = Father_Edu_Label, 
                        fill = 0.5 - abs(0.5 - stat(ecdf)))) + 
   stat_density_ridges(geom = "density_ridges_gradient", 
@@ -389,7 +389,7 @@ p_fa_tail <- ggplot(plot_data,
   labs(title = "Father's Education", 
        x = "GPA Score", y = "Education Level") +
   theme(legend.position = "none")
-p_mo_tail <- ggplot(plot_data, 
+p_mo_tail <- ggplot(final_ggplot, 
                    aes(x = GPA_Num, y = Mother_Edu_Label, 
                        fill = 0.5 - abs(0.5 - stat(ecdf)))) +
   stat_density_ridges(geom = "density_ridges_gradient", 
