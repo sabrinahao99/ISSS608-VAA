@@ -46,15 +46,8 @@ In this exercise, several R packages will be used. They are listed in the table 
 | [**tidyverse**](https://www.tidyverse.org/) | A collection of core packages used for data preparation and wrangling. |
 | [**knitr**](https://yihui.org/knitr/) | For dynamic report generation. |
 | [**patchwork**](https://patchwork.data-imaginist.com/) | For preparing composite figure created using ggplot2. |
-| [**ggthemes**](https://jrnold.github.io/ggthemes/) | Extra themes, geoms, and scales for ggplot2. |
 | [**ggridges**](https://wilkelab.org/ggridges/) | For ridgeline plots that create the impression of a mountain range.can be useful for visualising changes in distributions over time. |
 | [**ggdist**](https://mjskay.github.io/ggdist/) | For visualisations of distributions and uncertainty. Key package for creating Raincloud Plots. |
-| [**treemapify**](https://wilkox.org/treemapify/) | Provides 'ggplot2' geoms for drawing Treemaps, used for visualising hierarchical demographic data. |
-| [**ggrepel**](https://ggrepel.slowkow.com/) | Provides geoms for ggplot2 to repel overlapping text labels. Essential for annotating outliers. |
-| [**ggcorrplot**](http://www.sthda.com/english/wiki/ggcorrplot) | For visualizing a correlation matrix using ggplot2. |
-| [**ggnewscale**](https://eliocamp.github.io/ggnewscale/) | For defining scales in ggplot2. |
-| [**ggtext**](https://wilkelab.org/ggtext/) | Supports improved text rendering for ggplot2. |
-| [**ggpubr**](https://rpkgs.datanovia.com/ggpubr/) | Provides some easy-to-use functions for creating and customizing ‘ggplot2’- based publication ready plots. |
 | [**HH**](https://cran.r-project.org/web/packages/HH/HH.pdf) | particularly known for its likert() function which creates diverging stacked bar charts for Likert scale dataspecialized. |
 | [**ggtern**](https://cloud.r-project.org/web/packages/ggtern/ggtern.pdf) | a ggplot extension specially designed to plot ternary diagrams. The package will be used to plot static ternary plots. |
 | [**ggstatsplot**](https://indrajeetpatil.github.io/ggstatsplot/) | {ggstatsplot} is an extension of {ggplot2} package for creating graphics with details from statistical tests included in the information-rich plots themselves. |
@@ -62,10 +55,15 @@ In this exercise, several R packages will be used. They are listed in the table 
 The following code chunk uses `p_load()` of [**pacman**](https://rpubs.com/akshaypatankar/594834) package to check if tidyverse packages are installed in the computer. If they are, the libraries will be called into R.
 
 ```{r}
-pacman::p_load(tidyverse, knitr, patchwork, 
-               ggthemes, ggridges, ggdist, 
-               treemapify, ggrepel, ggcorrplot,
-               ggnewscale,ggtext,ggpubr,HH,ggtern,ggstatsplot)
+pacman::p_load(
+  tidyverse,    
+  knitr,       
+  patchwork,    
+  ggridges,     
+  ggtern,      
+  HH,           
+  ggstatsplot   
+)
 ```
 
 # 3.Data Import
@@ -204,10 +202,8 @@ To explore the evolution of GPA distribution across different grade levels, I fi
 ```{r}
 #| echo: true
 #| warning: false
-# drop missing or NAN value
-plot_data <- final_ggplot[!is.na(final_ggplot$GPA_Num) & !is.na(final_ggplot$Year_Label), ]
 #stats(quantile)
-ggplot(plot_data, 
+ggplot(final_ggplot, 
        aes(x = GPA_Num, 
            y = Year_Label, 
            fill = factor(stat(quantile)))) + 
@@ -258,8 +254,6 @@ Father's education background
 ```{r}
 #| echo: true
 #| warning: false
-#| fig-width: 10
-#| fig-height: 6
 
 # compute high GPA rate
 high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excl)")
@@ -316,9 +310,6 @@ Mother's education background
 ```{r}
 #| echo: true
 #| warning: false
-#| fig-width: 10
-#| fig-height: 6
-
 # compute 
 high_gpa <- final_ggplot$GPA_Label %in% c("3.2–3.6 (Good)", ">=3.6 (Excl)")
 n_tab_m <- table(final_ggplot$Mother_Edu_Label)
@@ -577,6 +568,7 @@ likert(Measure ~ .,
        strip = FALSE)
 
 ```
+
 -   ::: panel-tabset
     -   ::: {.callout-note icon="false"}
         ## 😺 Observations

@@ -1,0 +1,48 @@
+---
+title: "Hands-on Exercise 6"
+author: "Zhiyi Hao"
+date: "2026/02/14"
+format:
+  html:
+    backgroundcolor: white
+    fontcolor: black
+    linkcolor: blue
+---
+
+This exercise we come to a new section, which is Visualising and Analysing Time-series Data,and first we should go to chapter 17.Let's start
+
+#17 Visualising and Analysing Time-oriented Data ##17.1 Learning Outcome In this exercise, we will know how to plot by using r package, they are:a calender heatmap,cycle plot,slopegraph,a horizon chart ##17.2 Getting Started
+
+```{r}
+pacman::p_load(scales, viridis, lubridate, ggthemes,
+               gridExtra, readxl, knitr, data.table,
+               CGPfunctions, ggHoriPlot, tidyverse)
+```
+
+##17.3 Plotting Calendar Heatmap In this section, we will learn how to plot a calender heatmap programmatically by using ggplot2 package. ##17.4 The data eventlog.csv file will be used. This data file consists of 199,999 rows of time-series cyber attack records by country. ###17.4.2 Importing Data First, you will use the code chunk below to import eventlog.csv file into R environment and called the data frame as attacks.
+
+```{r}
+attacks <- read_csv("data/eventlog.csv")
+```
+
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAABH0lEQVR4XmNgGAVDCqxdvzVhzcbNm6mBK6uqVqObDwf///9nXLt+SzG6JlJxTW3tVpBZ6OajgP3797Os3bClFV0zsbiuoXEfyAx0c7GCRTt3cq9Zv7UX3RBCuL6x8TBIL7p5eMGqVbv512zYMgvdMFy4san1FEgPujlEgbVrd0gCg3EJuqHouLm59TxILbp+ksCqjdvV12zcshLdcBhuamm7BFKDro8ssGbjRr01G7aux7Ckte0qSA5dPUVg9frNDkDLNsGDq7X9GkgMXR1VwNoNm0MgPmm/DmKjy49wwLjIbzM1MLq5GIBxgc9mhm2eFGGwGYQA42wvDI2kYrAZhADjdEyNpGKwGYQA42Q3DI2kYrAZBEGfy2aq4FEw5AAASl8F3R9fQqAAAAAASUVORK5CYII= "Run All Chunks Above")
+
+##1#7.4.3 Examining the data structure It is always a good practice to examine the imported data frame before further analysis is performed. For example, kable() can be used to review the structure of the imported data frame.
+
+```{r}
+kable(head(attacks))
+```
+
+Observations:
+
+-   timestamp field stores date-time values in POSIXct format.
+
+-   source_country field stores the source of the attack. It is in ISO 3166-1 alpha-2 country code.
+
+-   tz field stores time zone of the source IP address.
+
+### **17.4.4 Data Preparation**
+
+Step 1: Deriving *weekday* and *hour of day* fields
+
+Before we can plot the calender heatmap, two new fields namely *wkday* and *hour* need to be derived. In this step, we will write a function to perform the task.
