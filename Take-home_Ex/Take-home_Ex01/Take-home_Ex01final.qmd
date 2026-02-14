@@ -42,7 +42,7 @@ Based on the 2023 VNU Student Questionnaire Dataset, this post aims to reveal fo
 In this exercise, several R packages will be used. They are listed in the table below:
 
 | Library | Description |
-|:-----------------------------------|:-----------------------------------|
+|:---|:---|
 | [**tidyverse**](https://www.tidyverse.org/) | A collection of core packages used for data preparation and wrangling. |
 | [**knitr**](https://yihui.org/knitr/) | For dynamic report generation. |
 | [**patchwork**](https://patchwork.data-imaginist.com/) | For preparing composite figure created using ggplot2. |
@@ -572,13 +572,13 @@ likert(Measure ~ .,
        strip = FALSE)
 
 ```
-    -   ::: {.callout-note icon="false"}
-        ## 😺 Observations
 
-        -   Overall, the eight variables related to learning perceptions are significantly biased towards the positive: "very" generally accounts for a larger proportion than "not at all," indicating respondents have a positive evaluation of the school's environment and support. The proportion of "very" is large for teaching-related dimensions, indicating respondents are satisfied with these variables. Conversely, proportions of "Moderate" and "little" are relatively high for "Study_Methods" and "influence from friends," indicating these factors are more likely related to personal habits.
+-   ::: {.callout-note icon="false"}
+    ## 😺 Observations
 
-        -   This leads to a conclusion that respondents are generally satisfied with learning perceptions, but some factors still depend on individual differences. Besides, it also provides an overview for subsequent analysis of the relationship between perception variables and GPA.
-        :::
+    -   Overall, the eight variables related to learning perceptions are significantly biased towards the positive: "very" generally accounts for a larger proportion than "not at all," indicating respondents have a positive evaluation of the school's environment and support. The proportion of "very" is large for teaching-related dimensions, indicating respondents are satisfied with these variables. Conversely, proportions of "Moderate" and "little" are relatively high for "Study_Methods" and "influence from friends," indicating these factors are more likely related to personal habits.
+
+    -   This leads to a conclusion that respondents are generally satisfied with learning perceptions, but some factors still depend on individual differences. Besides, it also provides an overview for subsequent analysis of the relationship between perception variables and GPA.
     :::
 
 ### Viz7: Does GPA have the relationship with perception variables?
