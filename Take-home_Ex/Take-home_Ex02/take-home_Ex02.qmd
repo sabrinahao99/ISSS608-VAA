@@ -1,0 +1,343 @@
+---
+title: "Take-home Exercise 2"
+author: "Zhiyi Hao"
+date: "2026/03/01"
+format:
+  html:
+    backgroundcolor: white
+    fontcolor: black
+    linkcolor: blue
+---
+
+# 2.1 The Task
+
+# 2.2 Getting Started
+
+First we loads the necessary R packages and then reads the cleaned transaction dataset into R.
+
+```{r}
+# load required packages
+pacman::p_load(readxl, tidyverse, ggplot2, plotly, DT, cluster)
+# import dataset
+df <- read_excel("data/data.xlsx")
+```
+
+# 
+
+2.3 Data Preparation and Cleaning
+
+Before performing analysis, the raw trade data must be correctly cleaned and formatted. This step includes checking for missing values and duplicate records, standardizing variable formats, and converting the dataset from a long format to a wide format.
+
+```{r}
+# check duplicate records
+df %>%
+  count(country, year, month, category) %>%
+  filter(n > 1)
+# clean variables
+df_clean <- df %>%
+  mutate(
+    country = str_trim(str_to_lower(country)),
+    category = str_trim(str_to_lower(category)),
+    year = as.integer(year),
+    month = as.integer(month),
+    total = as.numeric(total)
+  ) %>%
+  filter(
+    !is.na(country),
+    !is.na(category),
+    !is.na(year),
+    !is.na(month),
+    !is.na(total)
+  )
+#check data after cleaning
+glimpse(df_clean)
+head(df_clean)
+summary(df_clean)
+colSums(is.na(df_clean))
+# reshape data from long to wide format
+df_wide <- df_clean %>%
+  pivot_wider(
+    names_from = category,
+    values_from = total
+  ) %>%
+  arrange(country, year, month)
+#check reshaped data
+glimpse(df_wide)
+head(df_wide)
+summary(df_wide)
+# create derived trade indicators
+df_wide <- df_wide %>%
+  mutate(
+    trade_balance = output - input,
+    trade_ratio = if_else(input != 0, output / input, NA_real_)
+  )
+#final check
+glimpse(df_wide)
+head(df_wide)
+summary(df_wide)
+
+colSums(is.na(df_wide))
+```
+
+# 2.4 Cluster and Outlier Analysis Module
+
+# 
+
+## 2.4.1 Country Trade Behaviour Segmentation
+
+Country-level features are created to summarise the overall trade behaviour of each country. The clustering result is then used to compare countries across different trade profile groups.
+
+Step 1: Create country-level features
+
+Monthly observations are aggregated into country-level summary features. These variables capture trade scale, balance, ratio, and variability.
+
+```{r}
+country_features <- df_wide %>%
+  group_by(country) %>%
+  summarise(
+    avg_input = mean(input, na.rm = TRUE),
+    avg_output = mean(output, na.rm = TRUE),
+    avg_balance = mean(trade_balance, na.rm = TRUE),
+    avg_ratio = mean(trade_ratio, na.rm = TRUE),
+    sd_input = sd(input, na.rm = TRUE),
+    sd_output = sd(output, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
+
+Step 2: Check the feature table
+
+The feature is to confirm that the variables are created correctly.
+
+```{r}
+glimpse(country_features)
+head(country_features)
+summary(country_features)
+colSums(is.na(country_features))
+```
+
+Step 3: Prepare the clustering data
+
+The country identifier is removed and the numeric variables are standardised before clustering.
+
+```{r}
+cluster_data <- country_features %>%
+  select(where(is.numeric))
+
+cluster_data_scaled <- scale(cluster_data)
+```
+
+Step 4: Run clustering
+
+In this prototype, countries are segmented into three clusters using k-means clustering.
+
+```{r}
+set.seed(123)
+
+km3 <- kmeans(cluster_data_scaled, centers = 3, nstart = 25)
+
+country_features$cluster <- as.factor(km3$cluster)
+
+head(country_features)
+```
+
+Step 5: Append cluster labels and inspect results
+
+The cluster labels are appended back to the country-level feature table for interpretation and plotting.
+
+```{r}
+head(country_features)
+summary(country_features)
+```
+
+Step 6:Visualising results
+
+The first chart shows the number of countries in each cluster. This provides an overview of how countries are distributed across the selected groups.
+
+```{r}
+plot_table1 <- country_features %>%
+  count(cluster)
+
+p1 <- ggplot(plot_table1, aes(x = cluster, y = n, fill = cluster)) +
+  geom_col() +
+  labs(
+    title = "Number of Countries in Each Cluster",
+    x = "Cluster",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+ggplotly(p1)
+```
+
+The second chart compares the main trade characteristics across clusters. This helps users understand how the groups differ in terms of average trade behaviour.
+
+```{r}
+plot_table2 <- country_features %>%
+  group_by(cluster) %>%
+  summarise(
+    avg_input = mean(avg_input, na.rm = TRUE),
+    avg_output = mean(avg_output, na.rm = TRUE),
+    avg_balance = mean(avg_balance, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(avg_input, avg_output, avg_balance),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+p2 <- ggplot(plot_table2, aes(x = variable, y = value, fill = cluster)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Average Input, Output and Balance by Cluster",
+    x = "Variable",
+    y = "Value"
+  ) +
+  theme_minimal()
+
+ggplotly(p2)
+```
+
+```         
+```
+
+```{r}
+plot_table3 <- country_features %>%
+  group_by(cluster) %>%
+  summarise(
+    avg_ratio = mean(avg_ratio, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+p3 <- ggplot(plot_table3, aes(x = cluster, y = avg_ratio, fill = cluster)) +
+  geom_col() +
+  labs(
+    title = "Average Trade Ratio by Cluster",
+    x = "Cluster",
+    y = "Average Trade Ratio"
+  ) +
+  theme_minimal()
+
+ggplotly(p3)
+```
+
+```{r}
+country_features %>%
+  select(country, avg_input, avg_output, avg_ratio, cluster) %>%
+  arrange(desc(avg_ratio))
+```
+
+Step 8: Interactive plot
+
+```{r}
+country_table <- country_features %>%
+  mutate(
+    avg_input = round(avg_input, 2),
+    avg_output = round(avg_output, 2),
+    avg_balance = round(avg_balance, 2),
+    avg_ratio = round(avg_ratio, 2)
+  ) %>%
+  select(country, avg_input, avg_output, avg_balance, avg_ratio, cluster)
+
+datatable(country_table)
+```
+
+Step 9: Results table
+
+```{r}
+datatable(country_features)
+```
+
+## 2.4.2 UI Design – Part 1
+
+## 
+
+## 2.4.3 Seasonal Pattern Clustering
+
+```{r}
+df_clustered <- df_wide %>%
+  left_join(
+    country_features %>% select(country, cluster),
+    by = "country"
+  )
+```
+
+```{r}
+glimpse(df_clustered)
+head(df_clustered)
+summary(df_clustered)
+```
+```{r}
+
+```
+
+```{r}
+monthly_cluster_summary <- df_clustered %>%
+  group_by(cluster, month) %>%
+  summarise(
+    avg_input = mean(input, na.rm = TRUE),
+    avg_output = mean(output, na.rm = TRUE),
+    avg_balance = mean(trade_balance, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
+
+
+```{r}
+head(monthly_cluster_summary)
+summary(monthly_cluster_summary)
+```
+
+```{r}
+p3 <- ggplot(
+  monthly_cluster_summary,
+  aes(x = month, y = avg_output, color = cluster, group = cluster)
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Monthly Output Pattern by Cluster",
+    x = "Month",
+    y = "Average Output"
+  ) +
+  theme_minimal()
+
+ggplotly(p3)
+```
+
+```{r}
+p4 <- ggplot(
+  monthly_cluster_summary,
+  aes(x = month, y = avg_input, color = cluster, group = cluster)
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Monthly Input Pattern by Cluster",
+    x = "Month",
+    y = "Average Input"
+  ) +
+  theme_minimal()
+
+ggplotly(p4)
+```
+## 2.4.4 UI Design – Part 2
+
+## 2.4.5 Cluster Transition Analysis
+
+## 
+
+## 2.4.6 UI Design – Part 3
+
+## 
+
+## 2.4.7 Outlier Detection
+
+## 
+
+## 2.4.8 UI Design – Part 4
+
+# 2.5 References
