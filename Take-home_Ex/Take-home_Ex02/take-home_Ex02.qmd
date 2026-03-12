@@ -13,153 +13,302 @@ format:
 
 # 2.2 Getting Started
 
-First we loads the necessary R packages and then reads the cleaned transaction dataset into R.
+Before the analysis, I first loaded the packages required for this task and imported the two sets of raw data: Import and Export.
 
 ```{r}
 # load required packages
-pacman::p_load(readxl, tidyverse, ggplot2, plotly, DT, cluster)
+pacman::p_load(readxl, tidyverse, cluster, lubridate)
 # import dataset
-df <- read_excel("data/data.xlsx")
+import_raw <- read_excel("data/Import.xlsx")
+export_raw <- read_excel("data/Export.xlsx")
 ```
 
-# 
+## 2.3 Data Preparation and Cleaning
 
-2.3 Data Preparation and Cleaning
-
-Before performing analysis, the raw trade data must be correctly cleaned and formatted. This step includes checking for missing values and duplicate records, standardizing variable formats, and converting the dataset from a long format to a wide format.
+Since the data is currently stored in two individual Excel files, Import and Export, it is necessary to clean the two sets of data separately and then organize them into a single long table structure that can be merged before the formal analysis.
 
 ```{r}
-# check duplicate records
-df %>%
-  count(country, year, month, category) %>%
-  filter(n > 1)
-# clean variables
-df_clean <- df %>%
-  mutate(
-    country = str_trim(str_to_lower(country)),
-    category = str_trim(str_to_lower(category)),
-    year = as.integer(year),
-    month = as.integer(month),
-    total = as.numeric(total)
-  ) %>%
-  filter(
-    !is.na(country),
-    !is.na(category),
-    !is.na(year),
-    !is.na(month),
-    !is.na(total)
-  )
-#check data after cleaning
-glimpse(df_clean)
-head(df_clean)
-summary(df_clean)
-colSums(is.na(df_clean))
-# reshape data from long to wide format
-df_wide <- df_clean %>%
-  pivot_wider(
-    names_from = category,
-    values_from = total
-  ) %>%
-  arrange(country, year, month)
-#check reshaped data
-glimpse(df_wide)
-head(df_wide)
-summary(df_wide)
-# create derived trade indicators
-df_wide <- df_wide %>%
-  mutate(
-    trade_balance = output - input,
-    trade_ratio = if_else(input != 0, output / input, NA_real_)
-  )
-#final check
-glimpse(df_wide)
-head(df_wide)
-summary(df_wide)
-
-colSums(is.na(df_wide))
+import_df <- import_raw[-1, ]
+names(import_df)[1] <- "date"
+# Excel serial date -> Date
+import_df$date <- as.Date(as.numeric(import_df$date), origin = "1899-12-30")
+import_df <- import_df %>%
+  mutate(across(-date, as.numeric))
 ```
 
-# 2.4 Cluster and Outlier Analysis Module
-
-# 
-
-## 2.4.1 Country Trade Behaviour Segmentation
-
-Country-level features are created to summarise the overall trade behaviour of each country. The clustering result is then used to compare countries across different trade profile groups.
-
-Step 1: Create country-level features
-
-Monthly observations are aggregated into country-level summary features. These variables capture trade scale, balance, ratio, and variability.
+```{r}
+#clean export data, change data into date, turn data type into numeric
+export_df <- export_raw[-1, ]
+names(export_df)[1] <- "date"
+export_df$date <- as.Date(as.numeric(export_df$date), origin = "1899-12-30")
+export_df <- export_df %>%
+  mutate(across(-date, as.numeric))
+```
 
 ```{r}
-country_features <- df_wide %>%
+#reshaping data into long format
+import_long <- import_df %>%
+  pivot_longer(
+    cols = -date,
+    names_to = "country",
+    values_to = "import_value"
+  )
+
+export_long <- export_df %>%
+  pivot_longer(
+    cols = -date,
+    names_to = "country",
+    values_to = "export_value"
+  )
+```
+
+```{r}
+#combine import and export
+trade_long <- full_join(import_long, export_long, by = c("date", "country")) %>%
+  mutate(
+    import_value = replace_na(import_value, 0),
+    export_value = replace_na(export_value, 0),
+    total_trade = import_value + export_value,
+    trade_balance = export_value - import_value,
+    trade_ratio = if_else(import_value > 0, export_value / import_value, NA_real_),
+    year = year(date),
+    month = month(date)
+  )
+```
+
+```{r}
+glimpse(trade_long)
+summary(trade_long$year)
+range(trade_long$year, na.rm = TRUE)
+```
+
+# 2.4 Selecting top 30 Countries
+
+Analyzing all countries directly with providing broader coverage would also introduce a large number of countries with consistently low trade volumes and limited information, making clustering results more difficult to interpret.
+
+Furthermore, too many inactive countries in the sample can lead to "low-value countries clustering together," reducing the cluster's discriminative power. Therefore, in this prototype, I chose to first filter out the Top 30 countries based on total trade volume.
+
+```{r}
+#we need to exclude the regions which are not countries
+exclude_regions <- c("Asia", "Europe", "America", "EU", "Oceania", "Africa")
+
+trade_long_clean <- trade_long %>%
+  filter(!country %in% exclude_regions)
+#then we select top 30 countries
+top30_countries <- trade_long_clean %>%
   group_by(country) %>%
   summarise(
-    avg_input = mean(input, na.rm = TRUE),
-    avg_output = mean(output, na.rm = TRUE),
+    total_trade_sum = sum(total_trade, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_trade_sum)) %>%
+  slice_head(n = 30) %>%
+  pull(country)
+
+trade_top30 <- trade_long_clean %>%
+  filter(country %in% top30_countries)
+```
+
+```{r}
+unique(trade_top30$country)
+length(unique(trade_top30$country))
+```
+
+# 2.5 Building Features for Clustering
+
+To perform clustering, I couldn't simply dump monthly detailed data. Instead, I needed to first summarize each country into a set of characteristics that could represent its overall trade relations.
+
+In this section, I constructed the following features:
+
+-   avg_trade: Average trade size
+
+-   recent_trade: Average trade in recent years
+
+-   early_trade: Average trade in earlier periods
+
+-   sd_trade: Volatility
+
+-   active_month_ratio: Percentage of active months
+
+-   avg_import: Average imports
+
+-   avg_export: Average exports
+
+-   avg_balance: Average trade balance
+
+-   avg_ratio: Average import/export ratio
+
+Based on these, I further derived two variables that better fit the design:
+
+growth_ratio: Growth rate in recent years relative to earlier periods
+
+cv_trade: Relative volatility (coefficient of variation)
+
+The reason for this approach is that I hope the final clustering results will more closely resemble the following categories of country relations:
+
+-   Countries with consistently high and stable long-term trade volumes
+
+-   Emerging countries with significant trade growth in recent years
+
+-   Countries with highly volatile and seasonal relationships
+
+-   Countries with persistently low activity levels
+
+```{r}
+min_year <- min(trade_top30$year, na.rm = TRUE)
+max_year <- max(trade_top30$year, na.rm = TRUE)
+```
+
+```{r}
+#base feature
+country_base <- trade_top30 %>%
+  group_by(country) %>%
+  summarise(
+    avg_trade = mean(total_trade, na.rm = TRUE),
+    sd_trade = sd(total_trade, na.rm = TRUE),
+    active_month_ratio = mean(total_trade > 0, na.rm = TRUE),
+    avg_import = mean(import_value, na.rm = TRUE),
+    avg_export = mean(export_value, na.rm = TRUE),
     avg_balance = mean(trade_balance, na.rm = TRUE),
-    avg_ratio = mean(trade_ratio, na.rm = TRUE),
-    sd_input = sd(input, na.rm = TRUE),
-    sd_output = sd(output, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+#recent & early trade
+recent_trade_tbl <- trade_top30 %>%
+  filter(year >= max_year - 2) %>%
+  group_by(country) %>%
+  summarise(
+    recent_trade = mean(total_trade, na.rm = TRUE),
     .groups = "drop"
   )
 
+early_trade_tbl <- trade_top30 %>%
+  filter(year <= min_year + 2) %>%
+  group_by(country) %>%
+  summarise(
+    early_trade = mean(total_trade, na.rm = TRUE),
+    .groups = "drop"
+  )
 ```
 
-Step 2: Check the feature table
-
-The feature is to confirm that the variables are created correctly.
+```{r}
+#seasonal feature
+seasonal_features <- trade_top30 %>%
+  group_by(country, month) %>%
+  summarise(
+    monthly_avg_trade = mean(total_trade, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(country) %>%
+  summarise(
+    seasonal_range = max(monthly_avg_trade, na.rm = TRUE) - min(monthly_avg_trade, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
 
 ```{r}
-glimpse(country_features)
-head(country_features)
-summary(country_features)
+#combine all features
+country_features <- country_base %>%
+  left_join(recent_trade_tbl, by = "country") %>%
+  left_join(early_trade_tbl, by = "country") %>%
+  left_join(seasonal_features, by = "country") %>%
+  mutate(
+    growth_ratio = log((recent_trade + 1) / (early_trade + 1)),
+    cv_trade = if_else(avg_trade > 0, sd_trade / avg_trade, NA_real_)
+  )
+#check
 colSums(is.na(country_features))
 ```
 
-Step 3: Prepare the clustering data
+2.5 define final varaibles
 
-The country identifier is removed and the numeric variables are standardised before clustering.
+Before clustering, I only retain the following variables:
+
+-   `avg_trade`
+
+-   `growth_ratio`
+
+-   `cv_trade`
+
+-   `active_month_ratio`
+
+-   `seasonal_range`
+
+-   `avg_balance`
+
+Also, I remove records with missing values.
 
 ```{r}
-cluster_data <- country_features %>%
-  select(where(is.numeric))
+country_features2 <- country_features %>%
+  select(
+    country,
+    avg_trade,
+    growth_ratio,
+    cv_trade,
+    active_month_ratio,
+    seasonal_range,
+    avg_balance
+  ) %>%
+  drop_na()
+```
+
+```{r}
+nrow(country_features2)
+summary(country_features2)
+```
+
+# 2.6 Standardization by using k-means
+
+This step involves standardization before clustering. Ideally, in this prototype, I'll use 3 clusters:
+
+-   Large-Scale Partners
+
+-   Mainstream Partners
+
+<!-- -->
+
+-   Emerging Partners
+
+Of course, the specific clusters will depend on the results from shinyapp and will require further adjustments.
+
+```{r}
+cluster_data <- country_features2 %>%
+  select(
+    avg_trade,
+    growth_ratio,
+    cv_trade,
+    active_month_ratio,
+    seasonal_range,
+    avg_balance
+  )
 
 cluster_data_scaled <- scale(cluster_data)
-```
 
-Step 4: Run clustering
-
-In this prototype, countries are segmented into three clusters using k-means clustering.
-
-```{r}
 set.seed(123)
-
 km3 <- kmeans(cluster_data_scaled, centers = 3, nstart = 25)
 
-country_features$cluster <- as.factor(km3$cluster)
-
-head(country_features)
+country_features2$cluster <- as.factor(km3$cluster)
 ```
 
-Step 5: Append cluster labels and inspect results
-
-The cluster labels are appended back to the country-level feature table for interpretation and plotting.
-
 ```{r}
-head(country_features)
-summary(country_features)
+table(country_features2$cluster)
 ```
 
-Step 6:Visualising results
+# 2.7 Trade Relationship Segmentation
 
-The first chart shows the number of countries in each cluster. This provides an overview of how countries are distributed across the selected groups.
+This section is to identify different types of trading partners.
+
+## 2.7.1 Cluster distribution
+
+The following is a bar chart showing how many countries are included in each cluster.
 
 ```{r}
-plot_table1 <- country_features %>%
+plot_table1 <- country_features2 %>%
   count(cluster)
 
-p1 <- ggplot(plot_table1, aes(x = cluster, y = n, fill = cluster)) +
+ggplot(plot_table1, aes(x = cluster, y = n, fill = cluster)) +
   geom_col() +
   labs(
     title = "Number of Countries in Each Cluster",
@@ -167,145 +316,291 @@ p1 <- ggplot(plot_table1, aes(x = cluster, y = n, fill = cluster)) +
     y = "Count"
   ) +
   theme_minimal()
-
-ggplotly(p1)
 ```
 
-The second chart compares the main trade characteristics across clusters. This helps users understand how the groups differ in terms of average trade behaviour.
+Clustering results indicate that most countries have relatively mainstream trade patterns, while a few countries exhibit more distinct characteristics.
+
+## 2.7.2 Performance of the features of each cluster
+
+Next, I used heatmap to compare the overall performance of each cluster across several key features.
+
+In this section, I focused on comparing:
+
+Average Trade
+
+Growth Ratio
+
+Volatility (CV) Trade
+
+Activity Month Ratio
+
+Seasonal Range
+
+Average Balance
 
 ```{r}
-plot_table2 <- country_features %>%
+plot_table2_scaled <- country_features2 %>%
   group_by(cluster) %>%
   summarise(
-    avg_input = mean(avg_input, na.rm = TRUE),
-    avg_output = mean(avg_output, na.rm = TRUE),
+    avg_trade = mean(avg_trade, na.rm = TRUE),
+    growth_ratio = mean(growth_ratio, na.rm = TRUE),
+    cv_trade = mean(cv_trade, na.rm = TRUE),
+    active_month_ratio = mean(active_month_ratio, na.rm = TRUE),
+    seasonal_range = mean(seasonal_range, na.rm = TRUE),
     avg_balance = mean(avg_balance, na.rm = TRUE),
     .groups = "drop"
-  ) %>%
+  )
+
+plot_table2_scaled_num <- plot_table2_scaled %>%
+  select(-cluster) %>%
+  scale() %>%
+  as.data.frame()
+
+plot_table2_scaled_num$cluster <- plot_table2_scaled$cluster
+
+plot_table2_scaled_long <- plot_table2_scaled_num %>%
   pivot_longer(
-    cols = c(avg_input, avg_output, avg_balance),
+    cols = -cluster,
     names_to = "variable",
     values_to = "value"
   )
 
-p2 <- ggplot(plot_table2, aes(x = variable, y = value, fill = cluster)) +
-  geom_col(position = "dodge") +
+ggplot(plot_table2_scaled_long, aes(x = variable, y = cluster, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), size = 3.5) +
+  scale_fill_gradient2(
+    low = "#90CAF9",
+    mid = "white",
+    high = "#F28B82",
+    midpoint = 0
+  ) +
+  scale_x_discrete(
+    labels = c(
+      "avg_trade" = "Average Trade",
+      "growth_ratio" = "Log Growth",
+      "cv_trade" = "Volatility (CV)",
+      "active_month_ratio" = "Activity Ratio",
+      "seasonal_range" = "Seasonal Range",
+      "avg_balance" = "Balance"
+    )
+  ) +
   labs(
-    title = "Average Input, Output and Balance by Cluster",
-    x = "Variable",
-    y = "Value"
+    title = "Standardised Cluster Characteristics Heatmap",
+    x = "Trade Indicator",
+    y = "Cluster",
+    fill = "Scaled Value"
   ) +
   theme_minimal()
-
-ggplotly(p2)
 ```
 
-```         
-```
+## 2.7.3 Cluster growth differences
+
+I used a lollipop chart to compare the average growth ratio of each cluster.
 
 ```{r}
-plot_table3 <- country_features %>%
+plot_table3 <- country_features2 %>%
   group_by(cluster) %>%
   summarise(
-    avg_ratio = mean(avg_ratio, na.rm = TRUE),
+    avg_growth_ratio = mean(growth_ratio, na.rm = TRUE),
     .groups = "drop"
   )
 
-p3 <- ggplot(plot_table3, aes(x = cluster, y = avg_ratio, fill = cluster)) +
-  geom_col() +
+ggplot(plot_table3, aes(x = cluster, y = avg_growth_ratio)) +
+  geom_segment(aes(xend = cluster, y = 0, yend = avg_growth_ratio), color = "grey60") +
+  geom_point(aes(color = cluster), size = 4) +
   labs(
-    title = "Average Trade Ratio by Cluster",
+    title = "Average log Growth by Cluster",
     x = "Cluster",
-    y = "Average Trade Ratio"
+    y = "Average Growth Ratio"
   ) +
   theme_minimal()
-
-ggplotly(p3)
 ```
 
-```{r}
-country_features %>%
-  select(country, avg_input, avg_output, avg_ratio, cluster) %>%
-  arrange(desc(avg_ratio))
-```
-
-Step 8: Interactive plot
+## 2.7.4 Summary table with cluster labels
 
 ```{r}
-country_table <- country_features %>%
+country_table <- country_features2 %>%
   mutate(
-    avg_input = round(avg_input, 2),
-    avg_output = round(avg_output, 2),
-    avg_balance = round(avg_balance, 2),
-    avg_ratio = round(avg_ratio, 2)
+    avg_trade = round(avg_trade, 2),
+    growth_ratio = round(growth_ratio, 2),
+    cv_trade = round(cv_trade, 2),
+    active_month_ratio = round(active_month_ratio, 2),
+    seasonal_range = round(seasonal_range, 2),
+    avg_balance = round(avg_balance, 2)
   ) %>%
-  select(country, avg_input, avg_output, avg_balance, avg_ratio, cluster)
+  arrange(cluster, desc(avg_trade))
 
-datatable(country_table)
+country_table
 ```
 
-Step 9: Results table
+# 2.8 UI Design - Part 1
+
+As mentioned earlier, the charts and tables above will be used to populate the first page of our application's "Country Trade Behavior Segmentation" module.
+
+Motivation: To provide users with an overall visual view of the country trade grouping results before they proceed to the next page, which forms the basis for subsequent analysis.
+
+Below is a visual of the prototype for this page. ![](image/page1_ui.png)
+
+**Functionality and Interactivity**
+
+Users only need to select the year range, number of clusters, and top N countries/regions once. The charts and tables will update immediately after the user's selection.
+
+**Other Considerations**
+
+I chose to use a single control panel for users to filter and select because users would likely want to see all visualizations convey the same cluster settings and country/region grouping results. This makes the page more consistent and reduces unnecessary switching between different parameter controls.
+
+# 2.9 Seasonal Pattern Clustering
+
+In section 2.9, we further compare whether these clusters still exhibit different behavioral patterns at the monthly level.
+
+Therefore, I first merged the cluster labels obtained from Page 1 back into the original monthly data, so that each country-month record carries the corresponding cluster information. This allows us to subsequently observe trade behavior along the cluster × month dimension.
 
 ```{r}
-datatable(country_features)
-```
-
-## 2.4.2 UI Design – Part 1
-
-## 
-
-## 2.4.3 Seasonal Pattern Clustering
-
-```{r}
-df_clustered <- df_wide %>%
+#join cluster
+trade_clustered <- trade_top30 %>%
   left_join(
-    country_features %>% select(country, cluster),
+    country_features2 %>% select(country, cluster),
     by = "country"
   )
+#check
+glimpse(trade_clustered)
+table(is.na(trade_clustered$cluster))
 ```
 
-```{r}
-glimpse(df_clustered)
-head(df_clustered)
-summary(df_clustered)
-```
-```{r}
+## 2.9.1 Cycle Plot of Monthly Trade By cluster
 
-```
+First, I used a line chart of Monthly Trade Pattern by Cluster to compare the changes in trade patterns of different clusters throughout the year.
 
 ```{r}
-monthly_cluster_summary <- df_clustered %>%
-  group_by(cluster, month) %>%
+cluster_year_month <- trade_clustered %>%
+  filter(year >= 2017) %>%
+  group_by(cluster, year, month) %>%
   summarise(
-    avg_input = mean(input, na.rm = TRUE),
-    avg_output = mean(output, na.rm = TRUE),
-    avg_balance = mean(trade_balance, na.rm = TRUE),
+    avg_trade = mean(total_trade, na.rm = TRUE),
     .groups = "drop"
   )
 
-```
+cluster_year_month$month <- factor(
+  cluster_year_month$month,
+  levels = 1:12,
+  labels = month.abb,
+  ordered = TRUE
+)
 
+hline_data <- cluster_year_month %>%
+  group_by(cluster, month) %>%
+  summarise(
+    avgvalue = mean(avg_trade, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-```{r}
-head(monthly_cluster_summary)
-summary(monthly_cluster_summary)
-```
-
-```{r}
-p3 <- ggplot(
-  monthly_cluster_summary,
-  aes(x = month, y = avg_output, color = cluster, group = cluster)
-) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2) +
+ggplot() +
+  geom_line(
+    data = cluster_year_month,
+    aes(x = year, y = avg_trade, group = month),
+    colour = "black"
+  ) +
+  geom_hline(
+    data = hline_data,
+    aes(yintercept = avgvalue),
+    linetype = 2,
+    colour = "red",
+    linewidth = 0.4
+  ) +
+  facet_grid(cluster ~ month) +
+  scale_x_continuous(breaks = seq(2017, 2026, by = 3)) +
   labs(
-    title = "Monthly Output Pattern by Cluster",
-    x = "Month",
-    y = "Average Output"
+    title = "Cycle Plot of Monthly Trade by Cluster",
+    x = "",
+    y = "Average Monthly Trade"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 6, angle = 45, hjust = 1),
+    strip.text = element_text(size = 10)
+  )
+```
+
+```{r}
+#every cluster, average reference line for each month
+hline_data <- cluster_year_month %>%
+  group_by(cluster, month) %>%
+  summarise(
+    avgvalue = mean(avg_trade, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot() +
+  geom_line(
+    data = cluster_year_month,
+    aes(x = year, y = avg_trade, group = month),
+    colour = "black"
+  ) +
+  geom_hline(
+    data = hline_data,
+    aes(yintercept = avgvalue),
+    linetype = 2,
+    colour = "red",
+    linewidth = 0.4
+  ) +
+  facet_grid(cluster ~ month) +
+  labs(
+    title = "Cycle Plot of Monthly Trade by Cluster",
+    x = "",
+    y = "Average Monthly Trade"
   ) +
   theme_minimal()
+```
+## 2.9.2 Monthly Balance Pattern by Cluster
 
-ggplotly(p3)
+```{r}
+ggplot(monthly_cluster_summary,
+       aes(x = month, y = avg_balance, color = cluster, group = cluster)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50")+
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    title = "Monthly Balance Pattern by Cluster",
+    x = "Month",
+    y = "Average Monthly Balance",
+    color = "Cluster"
+  ) +
+  theme_minimal()
+```
+
+## 2.9.3 Seasonal Intensity Heatmap by Cluster and Month
+
+```{r}
+ggplot(monthly_cluster_summary, aes(x = factor(month), y = cluster, fill = avg_trade)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(avg_trade, 0)), size = 3) +
+  scale_fill_gradient(
+    low = "#E3F2FD",
+    high = "#1565C0"
+  ) +
+  labs(
+    title = "Seasonal Intensity Heatmap by Cluster and Month",
+    x = "Month",
+    y = "Cluster",
+    fill = "Average Trade"
+  ) +
+  theme_minimal()
+```
+
+## 2.9.4 Monthly Summary Table by Cluster
+
+```{r}
+monthly_table <- monthly_cluster_summary %>%
+  mutate(
+    avg_trade = round(avg_trade, 2),
+    avg_import = round(avg_import, 2),
+    avg_export = round(avg_export, 2),
+    avg_balance = round(avg_balance, 2)
+  )
+
+monthly_table
 ```
 
 ```{r}
@@ -324,20 +619,89 @@ p4 <- ggplot(
 
 ggplotly(p4)
 ```
-## 2.4.4 UI Design – Part 2
 
-## 2.4.5 Cluster Transition Analysis
+# 2.10 UI Design – Part 2
 
-## 
+This page showcases the monthly transaction behavior visualization of the clusters identified on the previous page.
 
-## 2.4.6 UI Design – Part 3
+Motivation: As the bridge of the former cluster segmentation, let users get more information on the monthly transaction and get more knowledge of the seasonal changes.
 
-## 
+Below is a visual of the prototype for this page. ![Seasonal Pattern Clustering](image/page2_ui.png)
 
-## 2.4.7 Outlier Detection
+**Functionality and Interactivity**
 
-## 
+Users only need to select the year range, number of clusters, and top N countries/regions once. Line charts, seasonal heatmaps, and data tables will update immediately after user selection.
 
-## 2.4.8 UI Design – Part 4
+**Other Considerations**
 
-# 2.5 References
+I chose to use a single control panel for users to filter and select because users might want to see all charts display the same clustering settings and seasonal statistics. This makes the page more consistent and reduces unnecessary switching between different parameter controls.
+
+# 2.11 Cluster Comparison Summary
+
+In this section, I use a positioning map to summarize what these three types of partners mean.The goal is to integrate the results from the first two pages into a more concise and user-friendly summary view.
+
+## **2.11.1 Trade Cluster Positioning Map**
+
+Therefore, I used a bubble chart with quadrant lines to construct a Trade Cluster Positioning Map.
+
+In this chart:
+
+-   The x-axis represents Log Growth
+
+-   The y-axis represents Average Trade
+
+-   The bubble size represents the Seasonal Range
+
+-   The color represents the cluster to which a country belongs
+
+Additionally, I added two reference dashed lines to represent the average levels of Log Growth and Average Trade for all countries, thus dividing the chart into four regions.
+
+```{r}
+ggplot(country_features2,
+       aes(x = growth_ratio, y = avg_trade, size = seasonal_range, color = cluster)) +
+  geom_point(alpha = 0.7) +
+  geom_vline(xintercept = mean(country_features2$growth_ratio, na.rm = TRUE),
+             linetype = "dashed", color = "grey50") +
+  geom_hline(yintercept = mean(country_features2$avg_trade, na.rm = TRUE),
+             linetype = "dashed", color = "grey50") +
+  labs(
+    title = "Trade Cluster Positioning Map",
+    x = "Log Growth",
+    y = "Average Trade",
+    size = "Seasonal Range",
+    color = "Cluster"
+  ) +
+  theme_minimal()
+```
+
+## **2.11.2 Cluster Definition(Panel)**
+
+**Cluster 1: Large-Scale Partners**
+
+These countries are characterized by high average trade volume for most months of the year, stable growth rates, and relatively large seasonal fluctuations. Therefore, they can be considered a group of large, stable trading partners in the long term.
+
+**Cluster 2: Mainstream Partners**
+
+This group comprises the vast majority of the sample, with most indicators at a moderate level. Specifically, they are neither extremely high-growth nor extremely large-scale, thus representing the most typical and common mainstream trading partners.
+
+**Cluster 3: Emerging Partners**
+
+Although this group of countries does not have the largest overall trade volume, they stand out the most in terms of growth indicators, particularly indicating a more pronounced upward trend in recent years. Therefore, we consider this group of countries to be more characteristic of emerging trading partners.
+
+## 2.12 UI Design – Part 3
+
+As mentioned above, Section 2.10.1 Trade Cluster Positioning Map and Section 2.10.2 Cluster Interpretation Panel will be used together to generate the third page in our app: the Cluster Comparison Summary.
+
+Motivation: To provide users with a more integrated cluster overview after they have completed segmentation and seasonal comparison.
+
+Below is a visual of the prototype for this page. ![Cluster Comparison Summary](image/page3_ui.png)**Functionality and interactivity**
+
+On this page, users can select a specific year range and the number of clusters to update the results. Users can also switch bubble size variables, such as seasonal range and volatility, to observe differences between clusters from different perspectives.
+
+**Additional Consideration**
+
+In this page, I didn't continue using a heatmap as the main image; instead, I used a bubble positioning map. This is because I believe a summary page needs a visual way to directly express "relative positional relationships." Therefore, by adding an average reference line and dividing the page into four quadrants, users can more clearly identify whether different clusters are biased towards high scale, high growth, or are in a more intermediate position.
+
+# 2.12 References
+
+Kam, T.S. (2025).R for visual Analytics
