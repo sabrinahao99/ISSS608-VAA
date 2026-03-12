@@ -462,9 +462,26 @@ trade_clustered <- trade_top30 %>%
     country_features2 %>% select(country, cluster),
     by = "country"
   )
+monthly_cluster_summary <- trade_clustered <- trade_top30 %>%
+  left_join(
+    country_features2 %>% select(country, cluster),
+    by = "country"
+  )
 #check
 glimpse(trade_clustered)
 table(is.na(trade_clustered$cluster))
+```
+
+```{r}
+monthly_cluster_summary <- trade_clustered %>%
+  group_by(cluster, month) %>%
+  summarise(
+    avg_trade = mean(total_trade, na.rm = TRUE),
+    avg_import = mean(import_value, na.rm = TRUE),
+    avg_export = mean(export_value, na.rm = TRUE),
+    avg_balance = mean(trade_balance, na.rm = TRUE),
+    .groups = "drop"
+  )
 ```
 
 ## 2.9.1 Monthly Trade Pattern by Cluster
