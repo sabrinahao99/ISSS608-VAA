@@ -47,6 +47,13 @@ format:
     css: styles.css
     toc: true
 
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+
 editor: visual
 
-
+execute:
+  freeze: auto
