@@ -48,11 +48,6 @@ format:
     toc: true
 
 
-format:
-  html:
-    theme: cosmo
-    toc: true
-
 editor: visual
 
 execute:
