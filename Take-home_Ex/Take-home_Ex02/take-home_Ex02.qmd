@@ -467,9 +467,26 @@ glimpse(trade_clustered)
 table(is.na(trade_clustered$cluster))
 ```
 
-## 2.9.1 Cycle Plot of Monthly Trade By cluster
+## 2.9.1 Monthly Trade Pattern by Cluster
 
-First, I used a line chart of Monthly Trade Pattern by Cluster to compare the changes in trade patterns of different clusters throughout the year.
+```{r}
+ggplot(monthly_cluster_summary,
+       aes(x = month, y = avg_trade, color = cluster, group = cluster)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    title = "Monthly Trade Pattern by Cluster",
+    x = "Month",
+    y = "Average Monthly Trade",
+    color = "Cluster"
+  ) +
+  theme_minimal()
+```
+
+## 2.9.2 **Cycle Plot of Monthly Trade By cluster**
+
+This cycle plot is to show the Monthly trade in years which reflects the time-series patterns.
 
 ```{r}
 cluster_year_month <- trade_clustered %>%
@@ -521,39 +538,9 @@ ggplot() +
   )
 ```
 
-```{r}
-#every cluster, average reference line for each month
-hline_data <- cluster_year_month %>%
-  group_by(cluster, month) %>%
-  summarise(
-    avgvalue = mean(avg_trade, na.rm = TRUE),
-    .groups = "drop"
-  )
-```
+We better not to put this into final UI design because
 
-```{r}
-ggplot() +
-  geom_line(
-    data = cluster_year_month,
-    aes(x = year, y = avg_trade, group = month),
-    colour = "black"
-  ) +
-  geom_hline(
-    data = hline_data,
-    aes(yintercept = avgvalue),
-    linetype = 2,
-    colour = "red",
-    linewidth = 0.4
-  ) +
-  facet_grid(cluster ~ month) +
-  labs(
-    title = "Cycle Plot of Monthly Trade by Cluster",
-    x = "",
-    y = "Average Monthly Trade"
-  ) +
-  theme_minimal()
-```
-## 2.9.2 Monthly Balance Pattern by Cluster
+## 2.9.3 Monthly Balance Pattern by Cluster
 
 ```{r}
 ggplot(monthly_cluster_summary,
@@ -570,7 +557,7 @@ ggplot(monthly_cluster_summary,
   theme_minimal()
 ```
 
-## 2.9.3 Seasonal Intensity Heatmap by Cluster and Month
+## 2.9.4 Seasonal Intensity Heatmap by Cluster and Month
 
 ```{r}
 ggplot(monthly_cluster_summary, aes(x = factor(month), y = cluster, fill = avg_trade)) +
@@ -589,7 +576,7 @@ ggplot(monthly_cluster_summary, aes(x = factor(month), y = cluster, fill = avg_t
   theme_minimal()
 ```
 
-## 2.9.4 Monthly Summary Table by Cluster
+## 2.9.5 Monthly Summary Table by Cluster
 
 ```{r}
 monthly_table <- monthly_cluster_summary %>%
@@ -601,23 +588,6 @@ monthly_table <- monthly_cluster_summary %>%
   )
 
 monthly_table
-```
-
-```{r}
-p4 <- ggplot(
-  monthly_cluster_summary,
-  aes(x = month, y = avg_input, color = cluster, group = cluster)
-) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2) +
-  labs(
-    title = "Monthly Input Pattern by Cluster",
-    x = "Month",
-    y = "Average Input"
-  ) +
-  theme_minimal()
-
-ggplotly(p4)
 ```
 
 # 2.10 UI Design – Part 2
@@ -640,7 +610,7 @@ I chose to use a single control panel for users to filter and select because use
 
 In this section, I use a positioning map to summarize what these three types of partners mean.The goal is to integrate the results from the first two pages into a more concise and user-friendly summary view.
 
-## **2.11.1 Trade Cluster Positioning Map**
+## 2.11.1 Trade Cluster Positioning Map
 
 Therefore, I used a bubble chart with quadrant lines to construct a Trade Cluster Positioning Map.
 
@@ -674,7 +644,7 @@ ggplot(country_features2,
   theme_minimal()
 ```
 
-## **2.11.2 Cluster Definition(Panel)**
+## 2.11.2 Cluster Definition(Panel)
 
 **Cluster 1: Large-Scale Partners**
 
@@ -704,4 +674,4 @@ In this page, I didn't continue using a heatmap as the main image; instead, I us
 
 # 2.12 References
 
-Kam, T.S. (2025).R for visual Analytics
+Kam, T.S. (2025).R for visual Analytics. https://r4va.netlify.app/chap17
