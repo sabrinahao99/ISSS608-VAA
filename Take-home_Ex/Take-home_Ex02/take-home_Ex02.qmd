@@ -146,8 +146,6 @@ In this section, I constructed the following features:
 
 -   avg_balance: Average trade balance
 
--   avg_ratio: Average import/export ratio
-
 Based on these, I further derived two variables that better fit the design:
 
 growth_ratio: Growth rate in recent years relative to earlier periods
@@ -230,7 +228,7 @@ country_features <- country_base %>%
 colSums(is.na(country_features))
 ```
 
-2.5 define final varaibles
+2.5 define final variables
 
 Before clustering, I only retain the following variables:
 
@@ -351,8 +349,6 @@ Growth Ratio
 
 Volatility (CV) Trade
 
-Activity Month Ratio
-
 Seasonal Range
 
 Average Balance
@@ -413,10 +409,6 @@ ggplot(plot_table2_scaled_long, aes(x = variable, y = cluster, fill = value)) +
 
 ## 2.7.3 Statistical comparison of cluster indicators
 
--   Average Trade by Cluster
-
--   Growth Ratio by Cluster
-
 ```{r}
 ggbetweenstats( 
   data = country_features2_clean, 
@@ -434,22 +426,7 @@ ggbetweenstats(
   )
 ```
 
-```{r}
-ggbetweenstats(
-  data = country_features2_clean,
-  x = cluster,
-  y = growth_ratio,
-  type = "np",
-  pairwise.comparisons = TRUE,
-  pairwise.display = "s",
-  p.adjust.method = "fdr",
-  messages = FALSE,
-  xlab = "Cluster",
-  ylab = "Growth Ratio",
-  title = "Statistical Comparison of Growth Ratio by Cluster",
-  centrality.label.args = list(size = 3)
-)
-```
+You can select which indicator you want to do statistical test on Shinyapp.This page shows only one.
 
 ## 2.7.4 Summary table with cluster labels
 
@@ -463,20 +440,17 @@ summary_table <- country_features2_clean %>%
     `Growth Ratio` = round(mean(growth_ratio, na.rm = TRUE), 2),
     `Volatility (CV)` = round(mean(cv_trade, na.rm = TRUE), 2),
     `Seasonal Range` = round(mean(seasonal_range, na.rm = TRUE), 2),
+    .groups = "drop"
+  ) %>%
+  mutate(
     `Cluster Label` = case_when(
       as.character(cluster) == "1" ~ "Large-scale and seasonal partners",
       as.character(cluster) == "2" ~ "Emerging and high growth partners",
       as.character(cluster) == "3" ~ "Mainstream lower-volatility partners",
       TRUE ~ "Additional cluster"
-    ),
-    .groups = "drop"
+    )
   ) %>%
   arrange(cluster)
-
-knitr::kable(
-  summary_table,
-  caption = "Summary Table with Cluster Labels"
-)
 ```
 
 In Shinyapp, each cluster will only have one, see in UI design.
@@ -491,7 +465,7 @@ Below is a visual of the prototype for this page. ![](image/page1_ui.png)
 
 [**Functionality and Interactivity**]{.underline}
 
-Users can adjust the "Number of countries" and "Number of clusters" parameters in the left-hand control panel. When these two parameters change, all charts on this page will update accordingly.
+Users can adjust the Number of countries, Number of clusters and rank countries by the metrics they choose themselves, all are parameters in the left-hand control panel. And also for the KW and Dunn's test, there's one comparison metric for users to choose to update the test.
 
 This page includes the following sections:
 
@@ -499,7 +473,7 @@ This page includes the following sections:
 
 -   Cluster Characteristics Heatmap: Shows the correlation of each cluster across different metrics, such as seasonality of growth.
 
--   Statistical Comparison: Shows the statistical differences between clusters across two core metrics.
+-   Statistical Comparison: Shows the statistical differences between clusters across all metrics.
 
 -   Cluster Summary: Summarizes the main characteristics and corresponding labels for each cluster.
 
@@ -651,7 +625,7 @@ ggbetweenstats(
 )
 ```
 
-## 2.9.5 Monthly Summary Table by Cluster
+You can select which indicator you want to do the statistical analysis in shinyAPP.This page only shows one as the example. \## 2.9.5 Monthly Summary Table by Cluster
 
 ```{r}
 monthly_summary_table <- monthly_cluster_summary %>%
@@ -679,7 +653,7 @@ Below is a visual of the prototype for this page. ![Seasonal Pattern Clustering]
 
 [**Functionality and Interactivity**]{.underline}
 
-Users only need to uniformly set the year range, number of clusters, and Numbers of countries on the left, and all charts on the page will update simultaneously.
+Users only need to uniformly number of clusters, and Numbers of countries, year range and whether users want to rank countries by any metrics on the left, and charts on the page will update simultaneously. There's also the seasonal metrics on the left for users to change for confirmatory comparison of the KW and Dunn's test.
 
 This page includes the following sections:
 
@@ -771,7 +745,7 @@ Motivation: The main purpose of this page is to summarize the analysis results f
 
 Below is a visual of the prototype for this page. ![Cluster Comparison Summary](image/page3_ui.png)[**Functionality and interactivity**]{.underline}
 
-Users can continue to use the “Numbers of Countries" and "Number of Clusters" parameters on the left, and can also adjust the bubble encoding to see the display effect when different variables are used as bubble sizes.
+Users can continue to use the “Numbers of Countries" and "Number of Clusters" parameters on the left, and can also adjust the bubble encoding to see the display effect when different variables are used as bubble sizes, users can also choose which cluster they want to highlight.
 
 This page includes two parts:
 

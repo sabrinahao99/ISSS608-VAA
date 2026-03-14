@@ -17,7 +17,7 @@ library(DT)
 
 # =========================================================
 #  Trade Cluster Analytics Shiny App
-#  Based on the final clustering workflow and visual outputs
+#  Enhanced version with meaningful controls for A+ level
 # =========================================================
 
 # -----------------------------
@@ -73,95 +73,212 @@ ui <- dashboardPage(
       menuItem("Page 3: Cluster Summary", tabName = "page3", icon = icon("compass"))
     ),
     hr(),
+    h4("Analysis Controls"),
+    
+    # Common controls shown on all pages
     sliderInput("top_n", "Number of Countries:", min = 10, max = 40, value = 30, step = 5),
-    selectInput("k_clusters", "Number of clusters:", choices = c(3, 4), selected = 3),
+    
+    selectInput(
+      "rank_by",
+      "Rank Countries By:",
+      choices = c(
+        "Total Trade" = "total_trade_sum",
+        "Average Trade" = "avg_trade_rank",
+        "Growth Ratio" = "growth_ratio_rank",
+        "Trade Balance" = "avg_balance_rank"
+      ),
+      selected = "total_trade_sum"
+    ),
+    
+    selectInput(
+      "k_clusters",
+      "Number of Clusters:",
+      choices = c(3, 4),
+      selected = 3
+    ),
+    
+    # Page 1 only
+    conditionalPanel(
+      condition = "input.tabs == 'page1'",
+      selectInput(
+        "comparison_metric",
+        "Comparison Metric:",
+        choices = c(
+          "Average Trade" = "avg_trade",
+          "Growth Ratio" = "growth_ratio",
+          "Seasonal Range" = "seasonal_range",
+          "Volatility (CV)" = "cv_trade",
+          "Trade Balance" = "avg_balance"
+        ),
+        selected = "avg_trade"
+      )
+    ),
+    
+    # Page 2 only
     conditionalPanel(
       condition = "input.tabs == 'page2'",
-      sliderInput("year_range", "Year range:", min = 2005, max = 2024, value = c(2017, 2024), step = 1, sep = "")
+      sliderInput(
+        "year_range",
+        "Year Range:",
+        min = 2005, max = 2024,
+        value = c(2017, 2024),
+        step = 1, sep = ""
+      )
     ),
+    
+    conditionalPanel(
+      condition = "input.tabs == 'page2'",
+      selectInput(
+        "seasonal_metric",
+        "Seasonal Metric:",
+        choices = c(
+          "Average Trade" = "avg_trade",
+          "Average Import" = "avg_import",
+          "Average Export" = "avg_export",
+          "Average Balance" = "avg_balance"
+        ),
+        selected = "avg_trade"
+      )
+    ),
+    
+    # Page 3 only
     conditionalPanel(
       condition = "input.tabs == 'page3'",
-      selectInput("bubble_size", "Bubble Encoding:", choices = c("seasonal_range", "cv_trade"), selected = "seasonal_range")
+      selectInput(
+        "bubble_size",
+        "Bubble Encoding:",
+        choices = c(
+          "Seasonal Range" = "seasonal_range",
+          "Volatility (CV)" = "cv_trade",
+          "Trade Balance" = "avg_balance"
+        ),
+        selected = "seasonal_range"
+      )
+    ),
+    
+    conditionalPanel(
+      condition = "input.tabs == 'page3'",
+      selectInput(
+        "highlight_cluster",
+        "Highlight Cluster:",
+        choices = c(
+          "All Clusters" = "all",
+          "Cluster 1" = "1",
+          "Cluster 2" = "2",
+          "Cluster 3" = "3",
+          "Cluster 4" = "4"
+        ),
+        selected = "all"
+      )
     )
-  ), 
+  ),
+  
   dashboardBody(
     tabItems(
-      tabItem(tabName = "page1",
-              fluidRow(
-                box(
-                  title = "How to Read This Page",
-                  width = 12,
-                  status = "warning",
-                  solidHeader = TRUE,
-                  HTML("This page profiles the cluster structure in size, characteristics, and statistical differences across clusters. You can also adjust model by clicking the two parameters on your left hand.")
-                )
-              ),
-              fluidRow(
-                box(title = "1. Cluster Distribution", width = 6, status = "primary", solidHeader = TRUE, plotOutput("cluster_distribution_plot", height = 260)),
-                box(title = "2. Cluster Characteristics Heatmap", width = 6, status = "primary", solidHeader = TRUE, plotOutput("cluster_heatmap_plot", height = 260))
-              ),
-              fluidRow(
-                box(title = "3. Statistical Comparison", width = 7, status = "primary", solidHeader = TRUE,
-                    tabsetPanel(
-                      tabPanel("Average Trade", plotOutput("avg_trade_stat_plot", height = 280)),
-                      tabPanel("Growth Ratio", plotOutput("growth_ratio_stat_plot", height = 280))
-                    )
-                ),
-                box(title = "4. Cluster Summary", width = 5, status = "primary", solidHeader = TRUE, DTOutput("cluster_summary_table"))
-              )
-      ), 
-      tabItem(tabName = "page2",
-              fluidRow(
-                box(
-                  title = "How to Read This Page",
-                  width = 12,
-                  status = "warning",
-                  solidHeader = TRUE,
-                  HTML("This page examines the monthly and seasonal behaviour of trade clusters.You can also adjust model by clicking the three parameters on your left hand.")
-                )
-              ),
-              fluidRow(
-                box(title = "5. Monthly Trade Trend", width = 6, status = "primary", solidHeader = TRUE,
-                    tabsetPanel(
-                      tabPanel("Monthly Trade Pattern", plotOutput("monthly_trade_plot", height = 240)),
-                      tabPanel("Cycle Plot", plotOutput("cycle_plot", height = 240))
-                    )
-                ),
-                box(title = "6. Seasonal Heatmap", width = 6, status = "primary", solidHeader = TRUE, plotOutput("seasonal_heatmap_plot", height = 240))
-              ),
-              fluidRow(
-                box(title = "7. Seasonal Range Comparison", width = 6, status = "primary", solidHeader = TRUE, plotOutput("seasonal_range_stat_plot", height = 260)),
-                box(title = "8. Monthly Summary", width = 6, status = "primary", solidHeader = TRUE, DTOutput("monthly_summary_table_output"))
-              )
-      ), 
-      tabItem(tabName = "page3",
-              fluidRow(
-                box(
-                  title = "How to Read This Page",
-                  width = 12,
-                  status = "warning",
-                  solidHeader = TRUE,
-                  HTML("This page summarizes cluster positioning and interpretation while you can click the three parameters on your left hand.")
-                )
-              ),
-              fluidRow(
-                box(title = "10. Positioning Map", width = 8, status = "primary", solidHeader = TRUE, plotlyOutput("positioning_map_plot", height = 500)),
-                box(title = "11. Cluster Definition", width = 4, status = "primary", solidHeader = TRUE, htmlOutput("cluster_definition_panel"))
-              )
-      ) 
+      tabItem(
+        tabName = "page1",
+        fluidRow(
+          box(
+            title = "How to Read This Page",
+            width = 12,
+            status = "warning",
+            solidHeader = TRUE,
+            HTML("This page introduces the segmentation structure of Singapore’s trade partners. Start with the cluster distribution, then compare cluster profiles in the heatmap, and finally validate whether the clusters differ significantly in key trade indicators.")
+          )
+        ),
+        fluidRow(
+          box(title = "1. Cluster Distribution", width = 6, status = "primary", solidHeader = TRUE,
+              plotOutput("cluster_distribution_plot", height = 260)),
+          box(title = "2. Cluster Characteristics Heatmap", width = 6, status = "primary", solidHeader = TRUE,
+              plotOutput("cluster_heatmap_plot", height = 260))
+        ),
+        fluidRow(
+          box(
+            title = "3. Confirmatory Comparison of Cluster Differences",
+            width = 7,
+            status = "primary",
+            solidHeader = TRUE,
+            plotOutput("comparison_stat_plot", height = 320)
+          ),
+          box(title = "4. Cluster Summary Table", width = 5, status = "primary", solidHeader = TRUE,
+              DTOutput("cluster_summary_table"))
+        )
+      ),
+      
+      tabItem(
+        tabName = "page2",
+        fluidRow(
+          box(
+            title = "How to Read This Page",
+            width = 12,
+            status = "warning",
+            solidHeader = TRUE,
+            HTML("This page focuses on monthly and seasonal behaviour across clusters. Use the line chart to compare monthly patterns, the heatmap to identify seasonal intensity, and the confirmatory plot to assess whether seasonal fluctuation differs significantly across clusters.")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "5. Monthly Cluster Pattern",
+            width = 6,
+            status = "primary",
+            solidHeader = TRUE,
+            tabsetPanel(
+              tabPanel("Monthly Trade Pattern", plotOutput("monthly_trade_plot", height = 240)),
+              tabPanel("Cycle Plot", plotOutput("cycle_plot", height = 240))
+            )
+          ),
+          box(title = "6. Seasonal Intensity Heatmap", width = 6, status = "primary", solidHeader = TRUE,
+              plotOutput("seasonal_heatmap_plot", height = 240))
+        ),
+        fluidRow(
+          box(title = "7. Confirmatory Comparison of Seasonal Range", width = 6, status = "primary", solidHeader = TRUE,
+              plotOutput("seasonal_range_stat_plot", height = 260)),
+          box(title = "8. Monthly Cluster Summary", width = 6, status = "primary", solidHeader = TRUE,
+              DTOutput("monthly_summary_table_output"))
+        )
+      ),
+      
+      tabItem(
+        tabName = "page3",
+        fluidRow(
+          box(
+            title = "How to Read This Page",
+            width = 12,
+            status = "warning",
+            solidHeader = TRUE,
+            HTML("This page summarises the positioning and interpretation of Singapore’s trade partner clusters. Use the scatter plot to understand how clusters differ in trade scale and growth, and refer to the interpretation panel for the business meaning of each cluster.")
+          )
+        ),
+        fluidRow(
+          box(title = "9. Trade Partner Cluster Scatter Plot", width = 8, status = "primary", solidHeader = TRUE,
+              plotlyOutput("positioning_map_plot", height = 500)),
+          box(title = "10. Cluster Interpretation", width = 4, status = "primary", solidHeader = TRUE,
+              htmlOutput("cluster_definition_panel"))
+        )
+      )
     )
-  ) 
-) 
+  )
+)
+
 # -----------------------------
 # 3. Server
 # -----------------------------
 server <- function(input, output, session) {
   
   top_countries_data <- reactive({
-    top_countries <- trade_long_clean %>%
+    ranking_tbl <- trade_long_clean %>%
       group_by(country) %>%
-      summarise(total_trade_sum = sum(total_trade, na.rm = TRUE), .groups = "drop") %>%
-      arrange(desc(total_trade_sum)) %>%
+      summarise(
+        total_trade_sum = sum(total_trade, na.rm = TRUE),
+        avg_trade_rank = mean(total_trade, na.rm = TRUE),
+        growth_ratio_rank = (mean(total_trade[year >= max(year, na.rm = TRUE) - 2], na.rm = TRUE) + 1) /
+          (mean(total_trade[year <= min(year, na.rm = TRUE) + 2], na.rm = TRUE) + 1),
+        avg_balance_rank = mean(trade_balance, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      arrange(desc(.data[[input$rank_by]]))
+    
+    top_countries <- ranking_tbl %>%
       slice_head(n = input$top_n) %>%
       pull(country)
     
@@ -232,7 +349,6 @@ server <- function(input, output, session) {
     
     set.seed(123)
     km <- kmeans(cluster_data_scaled, centers = as.numeric(input$k_clusters), nstart = 25)
-    
     country_features2_clean$cluster <- as.factor(km$cluster)
     
     trade_clustered <- trade_top %>%
@@ -273,7 +389,9 @@ server <- function(input, output, session) {
     )
   })
   
+  # -----------------------------
   # Page 1
+  # -----------------------------
   output$cluster_distribution_plot <- renderPlot({
     plot_table1 <- cluster_results()$country_features2_clean %>%
       count(cluster) %>%
@@ -335,40 +453,39 @@ server <- function(input, output, session) {
         "seasonal_range" = "Seasonal Range",
         "avg_balance" = "Balance"
       )) +
-      labs(title = "Standardised Cluster Characteristics Heatmap", x = "Trade Indicator", y = "Cluster", fill = "Scaled Value") +
+      labs(
+        title = "Standardised Cluster Characteristics Heatmap",
+        x = "Trade Indicator",
+        y = "Cluster",
+        fill = "Scaled Value"
+      ) +
       theme_minimal()
   })
   
-  output$avg_trade_stat_plot <- renderPlot({
-    ggbetweenstats(
-      data = cluster_results()$country_features2_clean,
-      x = cluster,
-      y = avg_trade,
-      type = "np",
-      pairwise.comparisons = TRUE,
-      pairwise.display = "s",
-      p.adjust.method = "fdr",
-      messages = FALSE,
-      xlab = "Cluster",
-      ylab = "Average Trade",
-      title = "Statistical Comparison of Average Trade by Cluster",
-      centrality.label.args = list(size = 3)
+  output$comparison_stat_plot <- renderPlot({
+    metric_labels <- c(
+      avg_trade = "Average Trade",
+      growth_ratio = "Growth Ratio",
+      seasonal_range = "Seasonal Range",
+      cv_trade = "Volatility (CV)",
+      avg_balance = "Trade Balance"
     )
-  })
-  
-  output$growth_ratio_stat_plot <- renderPlot({
+    
+    plot_data <- cluster_results()$country_features2_clean %>%
+      mutate(selected_metric = .data[[input$comparison_metric]])
+    
     ggbetweenstats(
-      data = cluster_results()$country_features2_clean,
+      data = plot_data,
       x = cluster,
-      y = growth_ratio,
+      y = selected_metric,
       type = "np",
       pairwise.comparisons = TRUE,
       pairwise.display = "s",
       p.adjust.method = "fdr",
       messages = FALSE,
       xlab = "Cluster",
-      ylab = "Growth Ratio",
-      title = "Statistical Comparison of Growth Ratio by Cluster",
+      ylab = metric_labels[[input$comparison_metric]],
+      title = paste("Confirmatory Comparison of", metric_labels[[input$comparison_metric]], "by Cluster"),
       centrality.label.args = list(size = 3)
     )
   })
@@ -405,14 +522,30 @@ server <- function(input, output, session) {
     )
   })
   
+  # -----------------------------
   # Page 2
+  # -----------------------------
   output$monthly_trade_plot <- renderPlot({
-    ggplot(cluster_results()$monthly_cluster_summary,
-           aes(x = month, y = avg_trade, color = cluster, group = cluster)) +
+    metric_labels <- c(
+      avg_trade = "Average Monthly Trade",
+      avg_import = "Average Monthly Import",
+      avg_export = "Average Monthly Export",
+      avg_balance = "Average Monthly Balance"
+    )
+    
+    ggplot(
+      cluster_results()$monthly_cluster_summary,
+      aes(x = month, y = .data[[input$seasonal_metric]], color = cluster, group = cluster)
+    ) +
       geom_line(linewidth = 1) +
       geom_point(size = 2) +
       scale_x_continuous(breaks = 1:12) +
-      labs(title = "Monthly Trade Pattern by Cluster", x = "Month", y = "Average Monthly Trade", color = "Cluster") +
+      labs(
+        title = paste(metric_labels[[input$seasonal_metric]], "Pattern by Cluster"),
+        x = "Month",
+        y = metric_labels[[input$seasonal_metric]],
+        color = "Cluster"
+      ) +
       theme_minimal()
   })
   
@@ -434,15 +567,33 @@ server <- function(input, output, session) {
       scale_x_continuous(breaks = seq(input$year_range[1], input$year_range[2], by = 3)) +
       labs(title = "Cycle Plot of Monthly Trade by Cluster", x = "", y = "Average Monthly Trade") +
       theme_minimal() +
-      theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1), strip.text = element_text(size = 10))
+      theme(
+        axis.text.x = element_text(size = 6, angle = 45, hjust = 1),
+        strip.text = element_text(size = 10)
+      )
   })
+  
   output$seasonal_heatmap_plot <- renderPlot({
-    ggplot(cluster_results()$monthly_cluster_summary,
-           aes(x = factor(month), y = cluster, fill = avg_trade)) +
+    metric_labels <- c(
+      avg_trade = "Average Trade",
+      avg_import = "Average Import",
+      avg_export = "Average Export",
+      avg_balance = "Average Balance"
+    )
+    
+    ggplot(
+      cluster_results()$monthly_cluster_summary,
+      aes(x = factor(month), y = cluster, fill = .data[[input$seasonal_metric]])
+    ) +
       geom_tile(color = "white") +
-      geom_text(aes(label = round(avg_trade, 0)), size = 3) +
+      geom_text(aes(label = round(.data[[input$seasonal_metric]], 0)), size = 3) +
       scale_fill_gradient(low = "#E3F2FD", high = "#1565C0") +
-      labs(title = "Seasonal Intensity Heatmap by Cluster and Month", x = "Month", y = "Cluster", fill = "Average Trade") +
+      labs(
+        title = paste("Seasonal Heatmap of", metric_labels[[input$seasonal_metric]], "by Cluster and Month"),
+        x = "Month",
+        y = "Cluster",
+        fill = metric_labels[[input$seasonal_metric]]
+      ) +
       theme_minimal()
   })
   
@@ -458,7 +609,7 @@ server <- function(input, output, session) {
       messages = FALSE,
       xlab = "Cluster",
       ylab = "Seasonal Range",
-      title = "Statistical Comparison of Seasonal Range by Cluster",
+      title = "Confirmatory Comparison of Seasonal Range by Cluster",
       centrality.label.args = list(size = 3)
     )
   })
@@ -485,9 +636,20 @@ server <- function(input, output, session) {
     )
   })
   
+  # -----------------------------
   # Page 3
+  # -----------------------------
   output$positioning_map_plot <- renderPlotly({
     cf <- cluster_results()$country_features2_clean
+    
+    cf <- cf %>%
+      mutate(
+        highlight_flag = if_else(
+          input$highlight_cluster == "all" | as.character(cluster) == input$highlight_cluster,
+          "Highlighted",
+          "Background"
+        )
+      )
     
     p <- ggplot(
       cf,
@@ -496,17 +658,20 @@ server <- function(input, output, session) {
         y = avg_trade,
         size = .data[[input$bubble_size]],
         color = factor(cluster),
+        alpha = highlight_flag,
         text = paste0(
           "Country: ", country,
           "<br>Cluster: ", cluster,
           "<br>Growth Ratio: ", round(growth_ratio, 2),
           "<br>Average Trade: ", round(avg_trade, 2),
           "<br>Seasonal Range: ", round(seasonal_range, 2),
-          "<br>Volatility (CV): ", round(cv_trade, 2)
+          "<br>Volatility (CV): ", round(cv_trade, 2),
+          "<br>Trade Balance: ", round(avg_balance, 2)
         )
       )
     ) +
-      geom_point(alpha = 0.75) +
+      geom_point() +
+      scale_alpha_manual(values = c("Highlighted" = 0.85, "Background" = 0.15), guide = "none") +
       geom_vline(
         xintercept = mean(cf$growth_ratio, na.rm = TRUE),
         linetype = "dashed",
@@ -518,7 +683,7 @@ server <- function(input, output, session) {
         color = "grey50"
       ) +
       labs(
-        title = "Trade Cluster Positioning Map",
+        title = "Trade Partner Cluster Scatter Plot",
         x = "Log Growth",
         y = "Average Trade",
         size = "Bubble Size",
@@ -535,16 +700,16 @@ server <- function(input, output, session) {
     if (k_val == 3) {
       HTML(
         "<h4>Cluster 1: Large-Scale and Seasonal Partners</h4>
-         <p>This group combine comparatively high trade scale with stronger seasonal fluctuation,which represent the most important core trade partners in the portfolio.</p>
-         <h4>Cluster 2: Emerging and high Growth Partners</h4>
-         <p>This group shows more in growth dynamics than in current size, appearing to be rising trade partners with relatively stronger recent momentum.</p>
-         <h4>Cluster 3: Mainstream and Low Volatility Partners</h4>
+         <p>This group combines relatively high trade scale with stronger seasonal fluctuation, representing the core trade partners in the portfolio.</p>
+         <h4>Cluster 2: Emerging and High-Growth Partners</h4>
+         <p>This group shows stronger growth dynamics than current scale, appearing as rising trade partners with relatively stronger recent momentum.</p>
+         <h4>Cluster 3: Mainstream and Low-Volatility Partners</h4>
          <p>This group contains the majority of countries, with more moderate trade scale, lower volatility, and more typical trade behaviour overall.</p>"
       )
     } else {
       HTML(
         "<h4>Cluster Interpretation</h4>
-         <p>The 4-cluster solution is shown for exploratory comparison. Final labels should be updated after inspecting the revised cluster heatmap, summary table, and temporal pattern plots.</p>"
+         <p>The 4-cluster solution is shown for exploratory comparison. Final labels should be updated after inspecting the revised cluster heatmap, summary table, seasonal pattern plots, and positioning scatter plot.</p>"
       )
     }
   })
