@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="dcterms.date" content="2026-03-01">
 
-<title>Proposal – ISSS608-VAA</title>
+<title>Project Proposal – ISSS608-VAA</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -40,7 +76,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-dff8208e074da8ffd6c93f4917eded5b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-3c103c788aac4b067399430f7745d67d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -131,6 +167,10 @@ ul.task-list li input[type="checkbox"] {
     <a class="dropdown-item" href="../../../Hands-on_Ex/Hands-on_Ex09/Hands-on_Ex09.html">
  <span class="dropdown-text">Hands-on Exercise 9</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../../Hands-on_Ex/Hands-on_Ex10/Hands-on_Ex10.html">
+ <span class="dropdown-text">Hands-on Exercise 10</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -169,15 +209,34 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem" id="toc-the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem" class="nav-link active" data-scroll-target="#the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem"><strong>The Architecture of Trade: Discussing Singapore’s Import and Export Partner Ecosystem</strong></a>
+  <ul class="collapse">
+  <li><a href="#what-distinguishes-singapores-core-emerging-and-mainstream-trading-partners-our-team-explores-the-structure-behaviour-and-positioning-of-global-trade-relationships-through-visual-analytics." id="toc-what-distinguishes-singapores-core-emerging-and-mainstream-trading-partners-our-team-explores-the-structure-behaviour-and-positioning-of-global-trade-relationships-through-visual-analytics." class="nav-link" data-scroll-target="#what-distinguishes-singapores-core-emerging-and-mainstream-trading-partners-our-team-explores-the-structure-behaviour-and-positioning-of-global-trade-relationships-through-visual-analytics.">What distinguishes Singapore’s core, emerging, and mainstream trading partners? Our team explores the structure, behaviour, and positioning of global trade relationships through visual analytics.</a></li>
+  </ul></li>
+  <li><a href="#overview-motivation" id="toc-overview-motivation" class="nav-link" data-scroll-target="#overview-motivation"><strong>Overview &amp; Motivation</strong></a></li>
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives"><strong>Objectives</strong></a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><strong>Data</strong></a>
+  <ul class="collapse">
+  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation"><strong>Data preparation:</strong></a></li>
+  </ul></li>
+  <li><a href="#methodology-analytical-approach" id="toc-methodology-analytical-approach" class="nav-link" data-scroll-target="#methodology-analytical-approach"><strong>Methodology &amp; Analytical Approach</strong></a></li>
+  <li><a href="#prototype" id="toc-prototype" class="nav-link" data-scroll-target="#prototype"><strong>Prototype</strong></a></li>
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R Packages</a></li>
+  <li><a href="#project-schedule" id="toc-project-schedule" class="nav-link" data-scroll-target="#project-schedule"><strong>Project Schedule</strong></a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Proposal</h1>
+<h1 class="title">Project Proposal</h1>
 </div>
 
 
@@ -185,6 +244,12 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 1, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -194,8 +259,293 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<section id="the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem" class="level2">
+<h2 class="anchored" data-anchor-id="the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem"><strong>The Architecture of Trade: Discussing Singapore’s Import and Export Partner Ecosystem</strong></h2>
+<section id="what-distinguishes-singapores-core-emerging-and-mainstream-trading-partners-our-team-explores-the-structure-behaviour-and-positioning-of-global-trade-relationships-through-visual-analytics." class="level3">
+<h3 class="anchored" data-anchor-id="what-distinguishes-singapores-core-emerging-and-mainstream-trading-partners-our-team-explores-the-structure-behaviour-and-positioning-of-global-trade-relationships-through-visual-analytics.">What distinguishes Singapore’s core, emerging, and mainstream trading partners? Our team explores the structure, behaviour, and positioning of global trade relationships through visual analytics.</h3>
+<p><strong>Authors: Hao Zhiyi, Wu Yanjie, Fang Yu</strong></p>
+</section>
+</section>
+<section id="overview-motivation" class="level1">
+<h1><strong>Overview &amp; Motivation</strong></h1>
+<p>Singapore is a highly trade-dependent economy, and international trade plays a crucial role in its economic development. Analyzing Singapore’s import and export data across all trading partners from 2005 to January 2026 can help reveal long-term trade trends and the structure of its global trade relationships. By comparing the top import and export partners, this project focuses on the countries with the closest trade connections to Singapore, allowing for a clearer understanding of key bilateral trade patterns and their evolution over time.</p>
+</section>
+<section id="objectives" class="level1">
+<h1><strong>Objectives</strong></h1>
+<p>The main objective of this project is to analyze Singapore’s international trade patterns using import and export data from 2005 to January 2026.</p>
+<p>Specifically, the project aims to:</p>
+<ul>
+<li><p>Examine overall trends in Singapore’s imports, exports, and total trade.</p></li>
+<li><p>Identify Singapore’s major trading partners based on import and export rankings.</p></li>
+<li><p>Conduct a focused analysis of the key countries with the strongest trade relationships with Singapore.</p></li>
+<li><p>Present the findings through clear and informative data visualizations.</p></li>
+</ul>
+</section>
+<section id="data" class="level1">
+<h1><strong>Data</strong></h1>
+<p>Data source: CEIC Database <a href="https://insights-ceicdata-com./">https://insights-ceicdata-com.</a></p>
+<p>Singapore imports &amp; exports datasets ,select countries which newest calue &gt; 10 SGD mn, this dataset consists of monthly import and export data from over 80 countries, five continents, and important political alliances from January 2005 to January 2026.</p>
+<section id="data-preparation" class="level2">
+<h2 class="anchored" data-anchor-id="data-preparation"><strong>Data preparation:</strong></h2>
+<p>In the macro exploration of data, find the top 10 countries in Singapore’s import and export volume rankings from 2005 to 2025. Identify the 8 countries that exist in both import and export as important trading partners and store them as the top 8data.xlsx for further analysis in “Exploratory and Confirmatory Analysis of Singapore’s Trade with Key Partners”. Therefore, “Macro exploration and geographic analysis” uses import and export files to generate and analyze the top 8 data files, “trade cluster analysis” uses the top 30 countries in the import and export files for cluster analysis, and “Exploratory and Confirmatory Analysis of Singapore’s Trade with Key Partners” uses the top 8 data for EDA and CDA analysis.</p>
+</section>
+</section>
+<section id="methodology-analytical-approach" class="level1">
+<h1><strong>Methodology &amp; Analytical Approach</strong></h1>
+<p>For this project, the following approach will be taken by the team:</p>
+<p>1.Macro exploration and geographical analysis:</p>
+<ul>
+<li><p>Descriptive statistics:</p>
+<p>Min, Max, Mean, Standard deviation, Stability, Total growth,</p>
+<p>Distribution by continent: violin plot, box plot combined with raw scatter points</p>
+<p>Dynamic ranking bar chart</p></li>
+<li><p>Geospatial Data Analysis:</p>
+<p>Interactive heat world map (country/continent)</p>
+<p>Trade Gravity Path</p></li>
+<li><p>Prediction: used the ETS model to predict and visualize the import and export trends of our core trading partners for 11 months.</p></li>
+</ul>
+<p>2. Clustering Analysis:</p>
+<p>This project adopts a clustering-based analytical approach to group Singapore’s trade partners according to their trade scale, growth, volatility, and seasonality. And applies k-means clustering on standardised variables to segment trade partners into meaningful groups.</p>
+<ul>
+<li>Cluster Distribution Analysis: Use a bar chart to examine the number and share of countries in each cluster.</li>
+<li>Cluster Characteristics Analysis: Use a standardised heatmap to compare the main features of each cluster across trade indicators.</li>
+<li>Seasonal Pattern Analysis: Use monthly trade trend charts and seasonal heatmaps to examine differences in seasonal behaviour across clusters.</li>
+<li>Positioning Analysis: Use a trade partner positioning map to visualise clusters based on Log Growth, Average Trade, and bubble size encoding.</li>
+<li>Exploratory Data Analysis Confirmatory Data Analysis:</li>
+</ul>
+<p>3.Exploratory Data Analysis</p>
+<p>Explore the overall structure and trends of Singapore’s trade data. The analysis focuses on identifying general patterns in imports, exports, and total trade, as well as determining the major trading partners.</p>
+<ul>
+<li>Trade Trend Analysis: Use time series visualisations to examine overall trends in Singapore’s imports, exports, and total trade from 2005 to January 2026.</li>
+<li>Top Trading Partner Analysis: Compare the top import and export partners to identify the countries with the strongest trade relationships with Singapore.</li>
+<li>Country-level Trade Analysis: Analyse the trade patterns of the selected key partner countries by comparing their import values, export values, and trade balance over time.</li>
+<li>Seasonal Pattern Analysis: Use monthly trade trend charts and seasonal heatmaps to explore recurring seasonal patterns in Singapore’s trade activities.</li>
+</ul>
+<p>4. Confirmatory Data Analysis:</p>
+<p>One-way ANOVA Test: Apply ANOVA to examine whether there are statistically significant differences in trade performance among Singapore’s major trading partners.</p>
+<p>Regression Analysis: Use regression models to analyze the relationship between time and trade values, and to evaluate long-term trends in Singapore’s imports and exports.</p>
+<p>Kruskal–Wallis Test: Use the Kruskal–Wallis test to assess whether there are statistically significant differences across clusters.(cluster)</p>
+<p>Dunn’s Post-hoc Test: Where significant differences are found, use Dunn’s pairwise comparison test to identify which clusters differ significantly from each other.(cluster)</p>
+</section>
+<section id="prototype" class="level1">
+<h1><strong>Prototype</strong></h1>
+<p>The team has decided to split the main prototype modules as follows:</p>
+<div class="panel">
+<section id="geographical-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="geographical-analysis">Geographical analysis</h2>
+<p><img src="Image/geo.png" class="img-fluid"></p>
+<p>This tab will serve as a geographical analysis of Singapore’s global trade network for imports and exports.</p>
+<p>Key features:</p>
+<p>Interactive global heat map: used to display which regions have closer trade relations with Singapore and to find important trading partners.</p>
+<p>Time selection module: Users can choose the start time and end time for statistics, or drag the timeline to view the continuous changes from 2005 to 2025.</p>
+<p>Single selection tool: Select the data to generate the map 1. Monthly/Annual 2. Country/Continent 3. Import/Export.</p>
+</section>
+<section id="cluster-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="cluster-analysis">Cluster Analysis</h2>
+<p><img src="Image/Cluster.png" class="img-fluid"> This tab will serve as a cluster overview dashboard within the R Shiny application, helping users understand how Singapore’s major trading partners are grouped according to their trade characteristics.</p>
+<p>Key features:</p>
+<p>A cluster distribution map, displaying the number and percentage of countries in each cluster.</p>
+<p>A cluster characteristic heatmap, comparing the standardized characteristics of each cluster across key trade indicators.</p>
+<p>A trade partner positioning map, visualizing countries by logarithmic growth rate and average trade volume; bubble size represents the selected trade indicator.</p>
+<p>An interactive filter panel, allowing users to adjust the number of countries, ranking criteria, number of clusters, bubble codes, and highlighted clusters.</p>
+<p>Interactive elements will be implemented through filter controls and tooltips, enabling users to explore each country’s clusters, trade size, growth rate, and seasonality.</p>
+</section>
+<section id="eda-overview" class="level2">
+<h2 class="anchored" data-anchor-id="eda-overview">EDA Overview</h2>
+<p><img src="Image/EDAoverview.png" class="img-fluid"> This tab provides an overall view of Singapore’s trade performance over time, allowing users to observe changes in total trade, imports, and exports.</p>
+<p>Key Features：</p>
+<p>KPI Indicators: Displays total trade, total exports, total imports, and trade balance to provide a quick summary of trade performance.</p>
+<p>Total Trade Trend: Shows how Singapore’s total trade value changes over time.</p>
+<p>Import vs Export Trend: Compares import and export values to highlight differences in trade patterns.</p>
+</section>
+<section id="eda-country-level-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="eda-country-level-analysis">EDA Country level analysis</h2>
+<p><img src="Image/EDAcountry.png" class="img-fluid"></p>
+<p>This tab compares Singapore’s trade relationships across major trading partners and highlights differences in trade scale and structure.</p>
+<p>Key Features:</p>
+<p>Top Trading Countries: Ranks of countries based on total trade value.</p>
+<p>Trade Structure by Country: Shows the composition of imports and exports for each country.</p>
+<p>Country-Level Trade Trends: Displays how trade values with each country change over time.</p>
+</section>
+<section id="eda-seasonal-level-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="eda-seasonal-level-analysis">EDA seasonal level analysis</h2>
+<p><img src="Image/EDAseason.png" class="img-fluid"></p>
+<p>This tab examines whether Singapore’s trade activity varies across different months.</p>
+<p>Key Features</p>
+<p>Monthly Trade Pattern: Shows the average trade value for each month.</p>
+<p>Seasonal Heatmap: Visualizes trade values across months and years using color intensity.</p>
+<p>Trade Variation Range: Illustrates the variation range of trade values across different months.</p>
+</section>
+<section id="confirmatory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="confirmatory-data-analysis">Confirmatory Data Analysis</h2>
+<p><img src="Image/CDA.png" class="img-fluid"></p>
+<p>This tab presents the confirmatory data analysis results to statistically examine the patterns observed in the exploratory analysis. It allows users to compare trade values across categories, countries, and months.</p>
+<p>Import vs Export Distribution: Compares the distributions of import and export trade values using violin and box plots.</p>
+<p>Trade Value by Country: Displays the distribution of trade values across different countries using boxplots.</p>
+<p>Trade Balance Trend: Shows the relationship between trade balance and time using a scatter plot with a regression line.</p>
+<p>Monthly Trade Comparison: Compares trade values across months to examine whether trade varies significantly during the year.</p>
+</section>
+</div>
+</section>
+<section id="r-packages" class="level1">
+<h1>R Packages</h1>
+<p>Our team intends to use the following R packages to run the R Shiny Application:</p>
+<p>readxl: A part of the tidyverse suite focused on importing data from Excel files (.xls and .xlsx).</p>
+<p>tidyverse: a family of modern R packages specially designed to support data science, analysis and communication task including creating static statistical graphs.</p>
+<p>knitr: an report generation tool.</p>
+<p>dplyr: an R tool for working with data frame (e.g.objects).</p>
+<p>plotly:R library for plotting interactive statistical graphs.</p>
+<p>DT: an R interface to the JavaScript library DataTables that create interactive table on html page.</p>
+<p>lubridate: an R package that facilitates to use of dates and time elements.</p>
+<p>ggforce: an extension of ggplot2 to provide visual data analysis with newer stats and geoms.</p>
+<p>highcharter: a wrapper that contains ‘highcharts’ library for plotting of R objects.</p>
+<p>sf: an R package that supports the importing, managing, and processing of geospatial data.</p>
+<p>spdep: an R package that supports the handling of geospatial data.</p>
+<p>tmap: an R package that provides layer-based creation of thematic maps.</p>
+<p>leaflet: an R package that allows the creation and customisation of interactive maps.</p>
+<p>ggstatsplot: an extension of ggplot2 package for statistical visualisation and graphics creation.</p>
+<p>ggdist: an R package that support visualisation of distribution and uncertainty.</p>
+<p>Cluster: an R package that provides methods for cluster analysis, including partitioning and hierarchical clustering techniques.</p>
+<p>gganimate: An extension of ggplot2 for creating animated statistical graphics (e.g., Bar Chart Race).</p>
+<p>fable: An R package for forecasting and time series analysis using various statistical models like ETS and ARIMA.</p>
+<p>tsibble: A specialized data frame for tidy temporal data, providing a foundation for time series analysis.</p>
+<p>feasts: Tools for feature extraction and statistics of time series, used to visualize and analyze temporal patterns.</p>
+<p>kableExtra: An extension of knitr for creating complex, highly customized static HTML tables.</p>
+<p>countrycode: A utility for converting country names into standardized codes (like ISO-3) and vice versa.</p>
+<p>rnaturalearth &amp; rnaturalearthdata: Packages providing world map data and cultural boundaries for geographic visualization.</p>
+<p>VennDiagram: A package specifically designed to generate high-resolution Venn diagrams to show intersections between sets.</p>
+<p>scales: Provides methods for automatically determining breaks and labels for axes and legends.</p>
+<p>ggthemes &amp; hrbrthemes: Collections of additional themes and scales for ggplot2 to enhance chart aesthetics.</p>
+<p>transformr &amp; gifski: Supporting packages for gganimate to handle smooth transitions and render high-quality GIF files.</p>
+</section>
+<section id="project-schedule" class="level1">
+<h1><strong>Project Schedule</strong></h1>
+<p>Below is an overview of our project timeline. For detailed list of task, please refer to gantt chart submitted.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.6
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.1     ✔ tibble    3.3.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.2
+✔ purrr     1.2.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 任务数据</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>tasks <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">task =</span> <span class="fu">c</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Data Collection"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Data Cleaning"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Exploratory Analysis"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Cluster Analysis"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Geographical Analysis"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Project Proposal"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R Quarto Website"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R Shiny App"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Storyboard / Prototype"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Poster"</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">start =</span> <span class="fu">as.Date</span>(<span class="fu">c</span>(</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-24"</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-25"</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-26"</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-26"</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-26"</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-27"</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-01"</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-25"</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-10"</span>,</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-20"</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  )),</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">end =</span> <span class="fu">as.Date</span>(<span class="fu">c</span>(</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-26"</span>,</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-26"</span>,</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-02-27"</span>,</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-10"</span>,</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-12"</span>,</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-15"</span>,</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-15"</span>,</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-22"</span>,</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-03-28"</span>,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2026-04-01"</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  )),</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  <span class="at">status =</span> <span class="fu">c</span>(</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Completed"</span>,</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Completed"</span>,</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Completed"</span>,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Completed"</span>,</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Completed"</span>,</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="st">"In progress"</span>,</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    <span class="st">"In progress"</span>,</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    <span class="st">"In progress"</span>,</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    <span class="st">"In progress"</span>,</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="st">"In progress"</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="co"># 为了让任务从上到下显示</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>tasks<span class="sc">$</span>task <span class="ot">&lt;-</span> <span class="fu">factor</span>(tasks<span class="sc">$</span>task, <span class="at">levels =</span> <span class="fu">rev</span>(tasks<span class="sc">$</span>task))</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(tasks) <span class="sc">+</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> start, <span class="at">xend =</span> end, <span class="at">y =</span> task, <span class="at">yend =</span> task, <span class="at">color =</span> status),</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="dv">6</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">xintercept =</span> <span class="fu">as.Date</span>(<span class="st">"2026-04-01"</span>),</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#E67E22"</span>,</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">"dashed"</span>,</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotate</span>(</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>    <span class="st">"text"</span>,</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">as.Date</span>(<span class="st">"2026-04-01"</span>),</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="dv">1</span>,</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">"Final Due</span><span class="sc">\n</span><span class="st">01 Apr"</span>,</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#E67E22"</span>,</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>    <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.1</span>,</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.5</span>,</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">4</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Completed"</span> <span class="ot">=</span> <span class="st">"#2C3E50"</span>,</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>      <span class="st">"In progress"</span> <span class="ot">=</span> <span class="st">"#E67E22"</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Project Timeline"</span>,</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NULL</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>,</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>)</span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Proposal_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
