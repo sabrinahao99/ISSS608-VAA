@@ -1,0 +1,107 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "index.html#rshiny-app",
+    "href": "index.html#rshiny-app",
+    "title": "Singapore Trade Partners Analysis",
+    "section": "",
+    "text": "RSHINY APP\n\n\nExplore the interactive dashboard through key analytical modules. Click any preview to open the full Shiny app.\n\n\n\nALL HOME TIME-BASED FORECAST MAP CLUSTER\n\n\n\n\n\nHome / Introduction\n\n\nProject overview, trade context, and statistical summary tables.\n\n\n\n\n\nTime-Based Analysis\n\n\nExplore temporal trade patterns and long-term movement across partner countries.\n\n\n\n\n\nForecast\n\n\nInspect projected trade trends and future movement patterns.\n\n\n\n\n\nGlobal Trade Map\n\n\nVisualise Singapore’s trade network and geographic distribution.\n\n\n\n\n\nCluster Analysis\n\n\nCompare countries based on similarity in time-series trade behaviour.\n\n\n\n\n Launch RShiny App"
+  },
+  {
+    "objectID": "index.html#project-journey",
+    "href": "index.html#project-journey",
+    "title": "Singapore Trade Partners Analysis",
+    "section": "Project Journey",
+    "text": "Project Journey\n\nProposal and meeting records that document the evolution of the project.\n\n\n\n\nProposal\n📄\nInitial project scope, motivation, and analytical plan.\nOpen\n\n\n\nMinutes 1\n📝\nInitial discussion on dataset scope and analytical direction.\nOpen\n\n\n\nMinutes 2\n📝\nMethod refinement after professor feedback and DTW update.\nOpen\n\n\n\nMinutes 3\n📝\nFinal integration, UI/UX polishing, and deployment planning.\nOpen"
+  },
+  {
+    "objectID": "index.html#team",
+    "href": "index.html#team",
+    "title": "Singapore Trade Partners Analysis",
+    "section": "Team",
+    "text": "Team\n\nThe project was developed collaboratively, with each member contributing to a different analytical component.\n\n\n\n\n\n\nHao Zhiyi\nMITB AI track\n\n\n\n\n\n\nWu Yanjie\nMITB DT track\n\n\n\n\n\n\nFang Yu\nMITB AI track"
+  },
+  {
+    "objectID": "index.html#poster",
+    "href": "index.html#poster",
+    "title": "Singapore Trade Partners Analysis",
+    "section": "",
+    "text": "POSTER\n\nOne glance view of the entire project"
+  },
+  {
+    "objectID": "index.html#contact",
+    "href": "index.html#contact",
+    "title": "Singapore Trade Partners Analysis",
+    "section": "",
+    "text": "CONTACT US\n\n\nIf you have any feedback, drop us a note!\n\n\n\n\n\n\n\n\nName\n\n\nEmail\n\n\nMessage\n\n\nSEND"
+  },
+  {
+    "objectID": "Proposal.html",
+    "href": "Proposal.html",
+    "title": "Project Proposal",
+    "section": "",
+    "text": "Authors: Hao Zhiyi, Wu Yanjie, Fang Yu"
+  },
+  {
+    "objectID": "Proposal.html#the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem",
+    "href": "Proposal.html#the-architecture-of-trade-discussing-singapores-import-and-export-partner-ecosystem",
+    "title": "Project Proposal",
+    "section": "",
+    "text": "Authors: Hao Zhiyi, Wu Yanjie, Fang Yu"
+  },
+  {
+    "objectID": "Proposal.html#data-preparation",
+    "href": "Proposal.html#data-preparation",
+    "title": "Project Proposal",
+    "section": "Data preparation:",
+    "text": "Data preparation:\nIn the macro exploration of data, find the top 10 countries in Singapore’s import and export volume rankings from 2005 to 2025. Identify the 8 countries that exist in both import and export as important trading partners and store them as the top 8data.xlsx for further analysis in “Exploratory and Confirmatory Analysis of Singapore’s Trade with Key Partners”. Therefore, “Macro exploration and geographic analysis” uses import and export files to generate and analyze the top 8 data files, “trade cluster analysis” uses the top 30 countries in the import and export files for cluster analysis, and “Exploratory and Confirmatory Analysis of Singapore’s Trade with Key Partners” uses the top 8 data for EDA and CDA analysis."
+  },
+  {
+    "objectID": "Proposal.html#geographical-analysis",
+    "href": "Proposal.html#geographical-analysis",
+    "title": "Project Proposal",
+    "section": "Geographical analysis",
+    "text": "Geographical analysis\n\nThis tab will serve as a geographical analysis of Singapore’s global trade network for imports and exports.\nKey features:\nInteractive global heat map: used to display which regions have closer trade relations with Singapore and to find important trading partners.\nTime selection module: Users can choose the start time and end time for statistics, or drag the timeline to view the continuous changes from 2005 to 2025.\nSingle selection tool: Select the data to generate the map 1. Monthly/Annual 2. Country/Continent 3. Import/Export."
+  },
+  {
+    "objectID": "Proposal.html#cluster-analysis",
+    "href": "Proposal.html#cluster-analysis",
+    "title": "Project Proposal",
+    "section": "Cluster Analysis",
+    "text": "Cluster Analysis\n This tab will serve as a cluster overview dashboard within the R Shiny application, helping users understand how Singapore’s major trading partners are grouped according to their trade characteristics.\nKey features:\nA cluster distribution map, displaying the number and percentage of countries in each cluster.\nA cluster characteristic heatmap, comparing the standardized characteristics of each cluster across key trade indicators.\nA trade partner positioning map, visualizing countries by logarithmic growth rate and average trade volume; bubble size represents the selected trade indicator.\nAn interactive filter panel, allowing users to adjust the number of countries, ranking criteria, number of clusters, bubble codes, and highlighted clusters.\nInteractive elements will be implemented through filter controls and tooltips, enabling users to explore each country’s clusters, trade size, growth rate, and seasonality."
+  },
+  {
+    "objectID": "Proposal.html#eda-overview",
+    "href": "Proposal.html#eda-overview",
+    "title": "Project Proposal",
+    "section": "EDA Overview",
+    "text": "EDA Overview\n This tab provides an overall view of Singapore’s trade performance over time, allowing users to observe changes in total trade, imports, and exports.\nKey Features：\nKPI Indicators: Displays total trade, total exports, total imports, and trade balance to provide a quick summary of trade performance.\nTotal Trade Trend: Shows how Singapore’s total trade value changes over time.\nImport vs Export Trend: Compares import and export values to highlight differences in trade patterns."
+  },
+  {
+    "objectID": "Proposal.html#eda-country-level-analysis",
+    "href": "Proposal.html#eda-country-level-analysis",
+    "title": "Project Proposal",
+    "section": "EDA Country level analysis",
+    "text": "EDA Country level analysis\n\nThis tab compares Singapore’s trade relationships across major trading partners and highlights differences in trade scale and structure.\nKey Features:\nTop Trading Countries: Ranks of countries based on total trade value.\nTrade Structure by Country: Shows the composition of imports and exports for each country.\nCountry-Level Trade Trends: Displays how trade values with each country change over time."
+  },
+  {
+    "objectID": "Proposal.html#eda-seasonal-level-analysis",
+    "href": "Proposal.html#eda-seasonal-level-analysis",
+    "title": "Project Proposal",
+    "section": "EDA seasonal level analysis",
+    "text": "EDA seasonal level analysis\n\nThis tab examines whether Singapore’s trade activity varies across different months.\nKey Features\nMonthly Trade Pattern: Shows the average trade value for each month.\nSeasonal Heatmap: Visualizes trade values across months and years using color intensity.\nTrade Variation Range: Illustrates the variation range of trade values across different months."
+  },
+  {
+    "objectID": "Proposal.html#confirmatory-data-analysis",
+    "href": "Proposal.html#confirmatory-data-analysis",
+    "title": "Project Proposal",
+    "section": "Confirmatory Data Analysis",
+    "text": "Confirmatory Data Analysis\n\nThis tab presents the confirmatory data analysis results to statistically examine the patterns observed in the exploratory analysis. It allows users to compare trade values across categories, countries, and months.\nImport vs Export Distribution: Compares the distributions of import and export trade values using violin and box plots.\nTrade Value by Country: Displays the distribution of trade values across different countries using boxplots.\nTrade Balance Trend: Shows the relationship between trade balance and time using a scatter plot with a regression line.\nMonthly Trade Comparison: Compares trade values across months to examine whether trade varies significantly during the year."
+  }
+]
