@@ -1,722 +1,524 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
 library(shiny)
-library(shinydashboard)
-library(tidyverse)
 library(readxl)
-library(lubridate)
-library(cluster)
-library(ggstatsplot)
-library(plotly)
-library(DT)
+library(dplyr)
+library(ggplot2)
+library(visNetwork)
 
-# =========================================================
-#  Trade Cluster Analytics Shiny App
-#  Enhanced version with meaningful controls for A+ level
-# =========================================================
+read_prepared_data <- function(file_path = "data/cluster_plot_input_tables_2005_2025_corrected.xlsx") {
+  trend_df <- read_excel(file_path, sheet = "cluster_trend_data")
+  members_df <- read_excel(file_path, sheet = "cluster_members")
+  nodes_df <- read_excel(file_path, sheet = "constellation_nodes")
+  edges_df <- read_excel(file_path, sheet = "constellation_edges")
+  
+  trend_df <- as.data.frame(trend_df)
+  members_df <- as.data.frame(members_df)
+  nodes_df <- as.data.frame(nodes_df)
+  edges_df <- as.data.frame(edges_df)
+  
+  names(trend_df)[1] <- "Date"
+  trend_df$Date <- as.Date(trend_df$Date)
+  
+  list(
+    trend = trend_df,
+    members = members_df,
+    nodes = nodes_df,
+    edges = edges_df
+  )
+}
 
-# -----------------------------
-# 1. Load and prepare data
-# -----------------------------
-import_raw <- read_excel("data/Import.xlsx")
-export_raw <- read_excel("data/Export.xlsx")
+prepare_members_data <- function(members_df) {
+  members_df %>%
+    transmute(
+      Country = as.character(Country),
+      Cluster = as.character(Cluster),
+      Avg_Trade_SGD_mn = as.numeric(Avg_Trade_SGD_mn),
+      Dev_Group = as.character(Dev_Group)
+    ) %>%
+    filter(!is.na(Country), Country != "") %>%
+    filter(!is.na(Cluster), Cluster != "") %>%
+    mutate(
+      Country = trimws(Country),
+      Cluster = trimws(Cluster),
+      Dev_Group = trimws(Dev_Group)
+    ) %>%
+    group_by(Cluster, Country) %>%
+    summarise(
+      Avg_Trade_SGD_mn = max(Avg_Trade_SGD_mn, na.rm = TRUE),
+      Dev_Group = first(Dev_Group),
+      .groups = "drop"
+    )
+}
 
-import_df <- import_raw[-1, ]
-names(import_df)[1] <- "date"
-import_df$date <- as.Date(as.numeric(import_df$date), origin = "1899-12-30")
-import_df <- import_df %>% mutate(across(-date, as.numeric))
+prepare_constellation_nodes <- function(nodes_df) {
+  nodes_df %>%
+    transmute(
+      Node_ID = as.character(Node_ID),
+      Label = as.character(Label),
+      Cluster = as.character(Cluster),
+      Node_Type = as.character(Node_Type),
+      X = as.numeric(X),
+      Y = as.numeric(Y),
+      Dev_Group = as.character(Dev_Group),
+      Country = as.character(Country)
+    ) %>%
+    mutate(
+      Label = ifelse(is.na(Label), "", trimws(Label)),
+      Cluster = trimws(Cluster),
+      Node_Type = trimws(Node_Type),
+      Dev_Group = ifelse(is.na(Dev_Group), "", trimws(Dev_Group)),
+      Country = ifelse(is.na(Country), "", trimws(Country))
+    )
+}
 
-export_df <- export_raw[-1, ]
-names(export_df)[1] <- "date"
-export_df$date <- as.Date(as.numeric(export_df$date), origin = "1899-12-30")
-export_df <- export_df %>% mutate(across(-date, as.numeric))
+prepare_constellation_edges <- function(edges_df) {
+  edges_df %>%
+    transmute(
+      From_Node = as.character(From_Node),
+      To_Node = as.character(To_Node),
+      Cluster = as.character(Cluster),
+      Edge_Type = as.character(Edge_Type)
+    ) %>%
+    mutate(
+      From_Node = trimws(From_Node),
+      To_Node = trimws(To_Node),
+      Cluster = trimws(Cluster),
+      Edge_Type = trimws(Edge_Type)
+    )
+}
 
-import_long <- import_df %>%
-  pivot_longer(cols = -date, names_to = "country", values_to = "import_value")
+make_cluster_trend_plot <- function(trend_df, selected_cluster, top_n = 6) {
+  if (selected_cluster == "All clusters") {
+    return(
+      ggplot() +
+        annotate("text", x = 1, y = 1, label = "Please select a specific cluster for the trend plot.", size = 6) +
+        theme_void()
+    )
+  }
+  
+  plot_df <- trend_df %>% filter(Cluster == selected_cluster)
+  
+  if (nrow(plot_df) == 0) {
+    return(
+      ggplot() +
+        annotate("text", x = 1, y = 1, label = "No data available for this cluster.", size = 6) +
+        theme_void()
+    )
+  }
+  
+  top_countries <- plot_df %>%
+    distinct(Country, Avg_Trade_SGD_mn) %>%
+    arrange(desc(Avg_Trade_SGD_mn)) %>%
+    slice_head(n = top_n) %>%
+    pull(Country)
+  
+  plot_df <- plot_df %>% filter(Country %in% top_countries)
+  
+  ggplot(plot_df, aes(x = Date, y = Index_Value, color = Country)) +
+    geom_line(linewidth = 0.8) +
+    scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+    labs(
+      title = "Cluster Time-Series Plot (2005–2025)",
+      subtitle = selected_cluster,
+      x = "Dates",
+      y = NULL,
+      color = NULL
+    ) +
+    theme_gray(base_size = 14) +
+    theme(
+      plot.title = element_text(face = "bold", size = 17),
+      plot.subtitle = element_text(face = "bold", size = 13),
+      legend.position = "bottom"
+    )
+}
 
-export_long <- export_df %>%
-  pivot_longer(cols = -date, names_to = "country", values_to = "export_value")
-
-trade_long <- full_join(import_long, export_long, by = c("date", "country")) %>%
-  mutate(
-    import_value = replace_na(import_value, 0),
-    export_value = replace_na(export_value, 0),
-    total_trade = import_value + export_value,
-    trade_balance = export_value - import_value,
-    trade_ratio = if_else(import_value > 0, export_value / import_value, NA_real_),
-    year = year(date),
-    month = month(date)
-  ) %>%
-  filter(year >= 2005)
-
-exclude_regions <- c("Asia", "Europe", "America", "EU", "Oceania", "Africa")
-
-trade_long_clean <- trade_long %>%
-  filter(!country %in% exclude_regions)
-
-# -----------------------------
-# 2. UI
-# -----------------------------
-ui <- dashboardPage(
-  skin = "blue",
-  dashboardHeader(title = "Trade Cluster Analytics"),
-  dashboardSidebar(
-    sidebarMenu(
-      id = "tabs",
-      menuItem("Page 1: Segmentation", tabName = "page1", icon = icon("chart-pie")),
-      menuItem("Page 2: Seasonal Pattern", tabName = "page2", icon = icon("chart-line")),
-      menuItem("Page 3: Cluster Summary", tabName = "page3", icon = icon("compass"))
-    ),
-    hr(),
-    h4("Analysis Controls"),
+make_integrated_network_map <- function(
+    members_df,
+    nodes_df,
+    edges_df,
+    selected_cluster = "All clusters",
+    max_nodes_per_cluster = 20,
+    selected_dev_groups = c("Emerging", "Newly Developed", "Developed"),
+    show_labels = TRUE
+) {
+  if (nrow(members_df) == 0 || nrow(nodes_df) == 0 || nrow(edges_df) == 0) {
+    return(NULL)
+  }
+  
+  if (is.null(selected_dev_groups) || length(selected_dev_groups) == 0) {
+    return(
+      visNetwork(
+        data.frame(
+          id = "empty",
+          label = "Please select at least one development group.",
+          x = 0, y = 0, shape = "text", fixed = TRUE
+        ),
+        data.frame(from = character(0), to = character(0)),
+        width = "100%",
+        height = "720px"
+      ) %>%
+        visPhysics(enabled = FALSE)
+    )
+  }
+  
+  dev_color_map <- c(
+    "Emerging" = "#FF6A00",
+    "Newly Developed" = "#D1C100",
+    "Developed" = "#16A34A"
+  )
+  
+  cluster_bg_map <- c(
+    "Cluster D" = "rgba(142,227,157,0.18)",
+    "Cluster C" = "rgba(247,204,138,0.18)",
+    "Cluster B" = "rgba(241,234,174,0.18)",
+    "Cluster A" = "rgba(114,214,245,0.18)"
+  )
+  
+  members_use <- members_df %>%
+    filter(Dev_Group %in% selected_dev_groups)
+  
+  if (selected_cluster != "All clusters") {
+    members_use <- members_use %>%
+      filter(Cluster == selected_cluster)
+  }
+  
+  members_top <- members_use %>%
+    group_by(Cluster) %>%
+    arrange(desc(Avg_Trade_SGD_mn), .by_group = TRUE) %>%
+    slice_head(n = max_nodes_per_cluster) %>%
+    ungroup()
+  
+  if (nrow(members_top) == 0) {
+    return(
+      visNetwork(
+        data.frame(
+          id = "empty",
+          label = "No countries match the selected filters.",
+          x = 0, y = 0, shape = "text", fixed = TRUE
+        ),
+        data.frame(from = character(0), to = character(0)),
+        width = "100%",
+        height = "720px"
+      ) %>%
+        visPhysics(enabled = FALSE)
+    )
+  }
+  
+  nodes_use <- nodes_df
+  edges_use <- edges_df
+  
+  if (selected_cluster != "All clusters") {
+    nodes_use <- nodes_use %>% filter(Cluster == selected_cluster)
+    edges_use <- edges_use %>% filter(Cluster == selected_cluster)
+  }
+  
+  keep_country_keys <- paste(members_top$Cluster, members_top$Country, sep = "___")
+  
+  keep_country_nodes <- nodes_use %>%
+    filter(Node_Type == "country") %>%
+    mutate(key = paste(Cluster, Country, sep = "___")) %>%
+    filter(key %in% keep_country_keys)
+  
+  if (nrow(keep_country_nodes) == 0) {
+    return(
+      visNetwork(
+        data.frame(
+          id = "empty",
+          label = "No countries remain after filtering.",
+          x = 0, y = 0, shape = "text", fixed = TRUE
+        ),
+        data.frame(from = character(0), to = character(0)),
+        width = "100%",
+        height = "720px"
+      ) %>%
+        visPhysics(enabled = FALSE)
+    )
+  }
+  
+  keep_mid_edges <- edges_use %>%
+    filter(Edge_Type == "mid_to_country", To_Node %in% keep_country_nodes$Node_ID)
+  
+  keep_mid_ids <- unique(keep_mid_edges$From_Node)
+  
+  keep_primary_edges <- edges_use %>%
+    filter(Edge_Type == "primary_to_mid", To_Node %in% keep_mid_ids)
+  
+  keep_node_ids <- unique(c(
+    keep_country_nodes$Node_ID,
+    keep_mid_edges$From_Node,
+    keep_primary_edges$From_Node,
+    keep_primary_edges$To_Node
+  ))
+  
+  final_nodes <- nodes_use %>%
+    filter(Node_ID %in% keep_node_ids)
+  
+  final_edges <- bind_rows(keep_primary_edges, keep_mid_edges)
+  
+  backbone_nodes <- data.frame()
+  backbone_edges <- data.frame()
+  
+  if (selected_cluster == "All clusters") {
+    primary_nodes <- final_nodes %>%
+      filter(Node_Type == "primary_cluster") %>%
+      arrange(X)
     
-    # Common controls shown on all pages
-    sliderInput("top_n", "Number of Countries:", min = 10, max = 40, value = 30, step = 5),
-    
-    selectInput(
-      "rank_by",
-      "Rank Countries By:",
-      choices = c(
-        "Total Trade" = "total_trade_sum",
-        "Average Trade" = "avg_trade_rank",
-        "Growth Ratio" = "growth_ratio_rank",
-        "Trade Balance" = "avg_balance_rank"
+    if (nrow(primary_nodes) >= 2) {
+      bb_list <- list()
+      be_list <- list()
+      
+      for (i in 1:(nrow(primary_nodes) - 1)) {
+        left_node <- primary_nodes[i, ]
+        right_node <- primary_nodes[i + 1, ]
+        
+        bb_id <- paste0("backbone_", i)
+        bb_x <- (left_node$X + right_node$X) / 2
+        bb_y <- (left_node$Y + right_node$Y) / 2 + 0.15
+        
+        bb_list[[i]] <- data.frame(
+          Node_ID = bb_id,
+          Label = "",
+          Cluster = "Backbone",
+          Node_Type = "backbone",
+          X = bb_x,
+          Y = bb_y,
+          Dev_Group = "",
+          Country = "",
+          stringsAsFactors = FALSE
+        )
+        
+        be_list[[length(be_list) + 1]] <- data.frame(
+          From_Node = left_node$Node_ID,
+          To_Node = bb_id,
+          Cluster = "Backbone",
+          Edge_Type = "backbone",
+          stringsAsFactors = FALSE
+        )
+        
+        be_list[[length(be_list) + 1]] <- data.frame(
+          From_Node = bb_id,
+          To_Node = right_node$Node_ID,
+          Cluster = "Backbone",
+          Edge_Type = "backbone",
+          stringsAsFactors = FALSE
+        )
+      }
+      
+      backbone_nodes <- bind_rows(bb_list)
+      backbone_edges <- bind_rows(be_list)
+    }
+  }
+  
+  final_nodes_all <- bind_rows(final_nodes, backbone_nodes)
+  final_edges_all <- bind_rows(final_edges, backbone_edges)
+  
+  vis_nodes <- final_nodes_all %>%
+    mutate(
+      id = Node_ID,
+      label = case_when(
+        Node_Type == "primary_cluster" ~ Label,
+        Node_Type == "country" & show_labels ~ Label,
+        TRUE ~ ""
       ),
-      selected = "total_trade_sum"
-    ),
-    
-    selectInput(
-      "k_clusters",
-      "Number of Clusters:",
-      choices = c(3, 4),
-      selected = 3
-    ),
-    
-    # Page 1 only
-    conditionalPanel(
-      condition = "input.tabs == 'page1'",
-      selectInput(
-        "comparison_metric",
-        "Comparison Metric:",
-        choices = c(
-          "Average Trade" = "avg_trade",
-          "Growth Ratio" = "growth_ratio",
-          "Seasonal Range" = "seasonal_range",
-          "Volatility (CV)" = "cv_trade",
-          "Trade Balance" = "avg_balance"
+      title = case_when(
+        Node_Type == "country" ~ paste0(
+          "<b>", Label, "</b><br>",
+          "Cluster: ", Cluster, "<br>",
+          "Development Group: ", Dev_Group
         ),
-        selected = "avg_trade"
+        Node_Type == "primary_cluster" ~ paste0("<b>", Cluster, "</b>"),
+        TRUE ~ ""
+      ),
+      x = X * 40,
+      y = -Y * 120,
+      shape = "dot",
+      size = case_when(
+        Node_Type == "primary_cluster" ~ 28,
+        Node_Type == "mid_node" ~ 8,
+        Node_Type == "backbone" ~ 8,
+        Node_Type == "country" ~ 14,
+        TRUE ~ 10
+      ),
+      color.background = case_when(
+        Node_Type == "primary_cluster" ~ "black",
+        Node_Type == "mid_node" ~ "#7a7a7a",
+        Node_Type == "backbone" ~ "#7a7a7a",
+        Node_Type == "country" ~ unname(dev_color_map[Dev_Group]),
+        TRUE ~ "#999999"
+      ),
+      color.border = case_when(
+        Node_Type == "primary_cluster" ~ "black",
+        Node_Type == "mid_node" ~ "#7a7a7a",
+        Node_Type == "backbone" ~ "#7a7a7a",
+        Node_Type == "country" ~ "#666666",
+        TRUE ~ "#999999"
+      ),
+      color.highlight.background = color.background,
+      color.highlight.border = color.border,
+      font.color = ifelse(Node_Type == "primary_cluster", "white", "black"),
+      font.size = ifelse(Node_Type == "country", 18, 20),
+      fixed = TRUE
+    ) %>%
+    select(
+      id, label, title, x, y, shape, size,
+      color.background, color.border,
+      color.highlight.background, color.highlight.border,
+      font.color, font.size, fixed
+    )
+  
+  vis_edges <- final_edges_all %>%
+    transmute(
+      from = From_Node,
+      to = To_Node
+    )
+  
+  pnodes <- final_nodes_all %>%
+    filter(Node_Type == "primary_cluster") %>%
+    arrange(X)
+  
+  background_css <- ""
+  
+  if (nrow(pnodes) > 0) {
+    cluster_boxes <- pnodes %>%
+      transmute(
+        cluster = Cluster,
+        left = X * 40 - 140,
+        width = 280,
+        color = unname(cluster_bg_map[Cluster])
       )
-    ),
     
-    # Page 2 only
-    conditionalPanel(
-      condition = "input.tabs == 'page2'",
-      sliderInput(
-        "year_range",
-        "Year Range:",
-        min = 2005, max = 2024,
-        value = c(2017, 2024),
-        step = 1, sep = ""
-      )
-    ),
+    cluster_divs <- paste0(
+      "<div style='position:absolute;
+                  left:", cluster_boxes$left, "px;
+                  top:40px;
+                  width:", cluster_boxes$width, "px;
+                  height:620px;
+                  background:", cluster_boxes$color, ";
+                  border:1px solid rgba(120,120,120,0.15);
+                  border-radius:18px;
+                  z-index:0;'></div>",
+      collapse = ""
+    )
     
-    conditionalPanel(
-      condition = "input.tabs == 'page2'",
-      selectInput(
-        "seasonal_metric",
-        "Seasonal Metric:",
-        choices = c(
-          "Average Trade" = "avg_trade",
-          "Average Import" = "avg_import",
-          "Average Export" = "avg_export",
-          "Average Balance" = "avg_balance"
-        ),
-        selected = "avg_trade"
-      )
-    ),
-    
-    # Page 3 only
-    conditionalPanel(
-      condition = "input.tabs == 'page3'",
-      selectInput(
-        "bubble_size",
-        "Bubble Encoding:",
-        choices = c(
-          "Seasonal Range" = "seasonal_range",
-          "Volatility (CV)" = "cv_trade",
-          "Trade Balance" = "avg_balance"
-        ),
-        selected = "seasonal_range"
-      )
-    ),
-    
-    conditionalPanel(
-      condition = "input.tabs == 'page3'",
-      selectInput(
-        "highlight_cluster",
-        "Highlight Cluster:",
-        choices = c(
-          "All Clusters" = "all",
-          "Cluster 1" = "1",
-          "Cluster 2" = "2",
-          "Cluster 3" = "3",
-          "Cluster 4" = "4"
-        ),
-        selected = "all"
+    background_css <- paste0(
+      "<div style='position:absolute; inset:0; pointer-events:none; z-index:0;'>",
+      cluster_divs,
+      "</div>"
+    )
+  }
+  
+  graph_html <- visNetwork(vis_nodes, vis_edges, width = "100%", height = "720px") %>%
+    visNodes(shadow = FALSE) %>%
+    visEdges(
+      color = list(color = "#8a8a8a", highlight = "#2c3e50"),
+      smooth = list(enabled = TRUE, type = "dynamic")
+    ) %>%
+    visInteraction(
+      dragNodes = TRUE,
+      dragView = TRUE,
+      zoomView = TRUE,
+      navigationButtons = TRUE,
+      hover = TRUE
+    ) %>%
+    visPhysics(enabled = FALSE) %>%
+    visOptions(
+      highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE),
+      nodesIdSelection = FALSE
+    )
+  
+  htmltools::tagList(
+    htmltools::div(
+      style = "position:relative; width:100%; height:720px;",
+      htmltools::HTML(background_css),
+      htmltools::div(
+        style = "position:relative; z-index:1;",
+        graph_html
       )
     )
-  ),
-  
-  dashboardBody(
-    tabItems(
-      tabItem(
-        tabName = "page1",
-        fluidRow(
-          box(
-            title = "How to Read This Page",
-            width = 12,
-            status = "warning",
-            solidHeader = TRUE,
-            HTML("This page introduces the segmentation structure of Singapore’s trade partners. Start with the cluster distribution, then compare cluster profiles in the heatmap, and finally validate whether the clusters differ significantly in key trade indicators.")
-          )
-        ),
-        fluidRow(
-          box(title = "1. Cluster Distribution", width = 6, status = "primary", solidHeader = TRUE,
-              plotOutput("cluster_distribution_plot", height = 260)),
-          box(title = "2. Cluster Characteristics Heatmap", width = 6, status = "primary", solidHeader = TRUE,
-              plotOutput("cluster_heatmap_plot", height = 260))
-        ),
-        fluidRow(
-          box(
-            title = "3. Confirmatory Comparison of Cluster Differences",
-            width = 7,
-            status = "primary",
-            solidHeader = TRUE,
-            plotOutput("comparison_stat_plot", height = 320)
-          ),
-          box(title = "4. Cluster Summary Table", width = 5, status = "primary", solidHeader = TRUE,
-              DTOutput("cluster_summary_table"))
-        )
+  )
+}
+
+ui <- fluidPage(
+  titlePanel("Cluster Plots from Prepared Tables"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput(
+        "top_n",
+        "Countries shown in trend plot:",
+        min = 3, max = 10, value = 6, step = 1
       ),
-      
-      tabItem(
-        tabName = "page2",
-        fluidRow(
-          box(
-            title = "How to Read This Page",
-            width = 12,
-            status = "warning",
-            solidHeader = TRUE,
-            HTML("This page focuses on monthly and seasonal behaviour across clusters. Use the line chart to compare monthly patterns, the heatmap to identify seasonal intensity, and the confirmatory plot to assess whether seasonal fluctuation differs significantly across clusters.")
-          )
-        ),
-        fluidRow(
-          box(
-            title = "5. Monthly Cluster Pattern",
-            width = 6,
-            status = "primary",
-            solidHeader = TRUE,
-            tabsetPanel(
-              tabPanel("Monthly Trade Pattern", plotOutput("monthly_trade_plot", height = 240)),
-              tabPanel("Cycle Plot", plotOutput("cycle_plot", height = 240))
-            )
-          ),
-          box(title = "6. Seasonal Intensity Heatmap", width = 6, status = "primary", solidHeader = TRUE,
-              plotOutput("seasonal_heatmap_plot", height = 240))
-        ),
-        fluidRow(
-          box(title = "7. Confirmatory Comparison of Seasonal Range", width = 6, status = "primary", solidHeader = TRUE,
-              plotOutput("seasonal_range_stat_plot", height = 260)),
-          box(title = "8. Monthly Cluster Summary", width = 6, status = "primary", solidHeader = TRUE,
-              DTOutput("monthly_summary_table_output"))
-        )
+      sliderInput(
+        "map_n",
+        "Countries shown in network map per cluster:",
+        min = 3, max = 20, value = 8, step = 1
       ),
-      
-      tabItem(
-        tabName = "page3",
-        fluidRow(
-          box(
-            title = "How to Read This Page",
-            width = 12,
-            status = "warning",
-            solidHeader = TRUE,
-            HTML("This page summarises the positioning and interpretation of Singapore’s trade partner clusters. Use the scatter plot to understand how clusters differ in trade scale and growth, and refer to the interpretation panel for the business meaning of each cluster.")
-          )
-        ),
-        fluidRow(
-          box(title = "9. Trade Partner Cluster Scatter Plot", width = 8, status = "primary", solidHeader = TRUE,
-              plotlyOutput("positioning_map_plot", height = 500)),
-          box(title = "10. Cluster Interpretation", width = 4, status = "primary", solidHeader = TRUE,
-              htmlOutput("cluster_definition_panel"))
-        )
+      selectInput(
+        "selected_cluster",
+        "Select cluster:",
+        choices = c("All clusters", "Cluster A", "Cluster B", "Cluster C", "Cluster D"),
+        selected = "All clusters",
+        selectize = FALSE
+      ),
+      checkboxGroupInput(
+        "selected_dev_groups",
+        "Development group:",
+        choices = c("Emerging", "Newly Developed", "Developed"),
+        selected = c("Emerging", "Newly Developed", "Developed")
+      ),
+      checkboxInput(
+        "show_labels",
+        "Show country labels",
+        value = TRUE
+      ),
+      h4("How clusters are defined"),
+      htmlOutput("cluster_explanation")
+    ),
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Constellation Plot", br(), uiOutput("constellation_plot_ui")),
+        tabPanel("Cluster Trend Plot", br(), plotOutput("cluster_plot", height = "620px"))
       )
     )
   )
 )
 
-# -----------------------------
-# 3. Server
-# -----------------------------
 server <- function(input, output, session) {
-  
-  top_countries_data <- reactive({
-    ranking_tbl <- trade_long_clean %>%
-      group_by(country) %>%
-      summarise(
-        total_trade_sum = sum(total_trade, na.rm = TRUE),
-        avg_trade_rank = mean(total_trade, na.rm = TRUE),
-        growth_ratio_rank = (mean(total_trade[year >= max(year, na.rm = TRUE) - 2], na.rm = TRUE) + 1) /
-          (mean(total_trade[year <= min(year, na.rm = TRUE) + 2], na.rm = TRUE) + 1),
-        avg_balance_rank = mean(trade_balance, na.rm = TRUE),
-        .groups = "drop"
-      ) %>%
-      arrange(desc(.data[[input$rank_by]]))
-    
-    top_countries <- ranking_tbl %>%
-      slice_head(n = input$top_n) %>%
-      pull(country)
-    
-    trade_long_clean %>%
-      filter(country %in% top_countries)
+  prepared_data <- reactive({
+    dat <- read_prepared_data()
+    dat$members <- prepare_members_data(dat$members)
+    dat$nodes <- prepare_constellation_nodes(dat$nodes)
+    dat$edges <- prepare_constellation_edges(dat$edges)
+    dat
   })
   
-  cluster_results <- reactive({
-    trade_top <- top_countries_data()
-    
-    min_year <- min(trade_top$year, na.rm = TRUE)
-    max_year <- max(trade_top$year, na.rm = TRUE)
-    
-    country_base <- trade_top %>%
-      group_by(country) %>%
-      summarise(
-        avg_trade = mean(total_trade, na.rm = TRUE),
-        sd_trade = sd(total_trade, na.rm = TRUE),
-        avg_import = mean(import_value, na.rm = TRUE),
-        avg_export = mean(export_value, na.rm = TRUE),
-        avg_balance = mean(trade_balance, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-    recent_trade_tbl <- trade_top %>%
-      filter(year >= max_year - 2) %>%
-      group_by(country) %>%
-      summarise(recent_trade = mean(total_trade, na.rm = TRUE), .groups = "drop")
-    
-    early_trade_tbl <- trade_top %>%
-      filter(year <= min_year + 2) %>%
-      group_by(country) %>%
-      summarise(early_trade = mean(total_trade, na.rm = TRUE), .groups = "drop")
-    
-    seasonal_features <- trade_top %>%
-      group_by(country, month) %>%
-      summarise(monthly_avg_trade = mean(total_trade, na.rm = TRUE), .groups = "drop") %>%
-      group_by(country) %>%
-      summarise(
-        seasonal_range = max(monthly_avg_trade, na.rm = TRUE) - min(monthly_avg_trade, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-    country_features <- country_base %>%
-      left_join(recent_trade_tbl, by = "country") %>%
-      left_join(early_trade_tbl, by = "country") %>%
-      left_join(seasonal_features, by = "country") %>%
-      mutate(
-        growth_ratio = log((recent_trade + 1) / (early_trade + 1)),
-        cv_trade = if_else(avg_trade > 0, sd_trade / avg_trade, NA_real_)
-      )
-    
-    country_features2_clean <- country_features %>%
-      select(country, avg_trade, growth_ratio, cv_trade, seasonal_range, avg_balance) %>%
-      drop_na() %>%
-      filter(
-        is.finite(avg_trade),
-        is.finite(growth_ratio),
-        is.finite(cv_trade),
-        is.finite(seasonal_range),
-        is.finite(avg_balance)
-      )
-    
-    cluster_data <- country_features2_clean %>%
-      select(avg_trade, growth_ratio, cv_trade, seasonal_range, avg_balance)
-    
-    cluster_data_scaled <- scale(cluster_data)
-    
-    set.seed(123)
-    km <- kmeans(cluster_data_scaled, centers = as.numeric(input$k_clusters), nstart = 25)
-    country_features2_clean$cluster <- as.factor(km$cluster)
-    
-    trade_clustered <- trade_top %>%
-      left_join(country_features2_clean %>% select(country, cluster), by = "country")
-    
-    monthly_cluster_summary <- trade_clustered %>%
-      group_by(cluster, month) %>%
-      summarise(
-        avg_trade = mean(total_trade, na.rm = TRUE),
-        avg_import = mean(import_value, na.rm = TRUE),
-        avg_export = mean(export_value, na.rm = TRUE),
-        avg_balance = mean(trade_balance, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-    cluster_year_month <- trade_clustered %>%
-      filter(year >= input$year_range[1], year <= input$year_range[2]) %>%
-      group_by(cluster, year, month) %>%
-      summarise(avg_trade = mean(total_trade, na.rm = TRUE), .groups = "drop")
-    
-    cluster_year_month$month <- factor(
-      cluster_year_month$month,
-      levels = 1:12,
-      labels = month.abb,
-      ordered = TRUE
-    )
-    
-    hline_data <- cluster_year_month %>%
-      group_by(cluster, month) %>%
-      summarise(avgvalue = mean(avg_trade, na.rm = TRUE), .groups = "drop")
-    
-    list(
-      country_features2_clean = country_features2_clean,
-      trade_clustered = trade_clustered,
-      monthly_cluster_summary = monthly_cluster_summary,
-      cluster_year_month = cluster_year_month,
-      hline_data = hline_data
+  output$cluster_explanation <- renderUI({
+    HTML(paste0(
+      "<b>Cluster A–D are data-driven groups.</b><br>",
+      "They were defined from the cleaned trade data by grouping countries with similar trade-series patterns, ",
+      "then relabelled as <b>Cluster A/B/C/D</b> according to cluster-average trade level from lower to higher.<br>",
+      "The constellation plot shows the full network by default, and can also be filtered to a specific cluster.<br>",
+      "Countries are displayed according to the selected node limit and development group filter.<br>",
+      "Orange / yellow / green represent <b>Emerging / Newly Developed / Developed</b> economies. ",
+      "These colours describe development group, not the clustering rule itself."
+    ))
+  })
+  
+  output$constellation_plot_ui <- renderUI({
+    dat <- prepared_data()
+    make_integrated_network_map(
+      members_df = dat$members,
+      nodes_df = dat$nodes,
+      edges_df = dat$edges,
+      selected_cluster = input$selected_cluster,
+      max_nodes_per_cluster = input$map_n,
+      selected_dev_groups = input$selected_dev_groups,
+      show_labels = input$show_labels
     )
   })
   
-  # -----------------------------
-  # Page 1
-  # -----------------------------
-  output$cluster_distribution_plot <- renderPlot({
-    plot_table1 <- cluster_results()$country_features2_clean %>%
-      count(cluster) %>%
-      mutate(
-        share = n / sum(n),
-        label = paste0("n = ", n, "\n", scales::percent(share, accuracy = 0.1))
-      )
-    
-    ggplot(plot_table1, aes(x = factor(cluster), y = n, fill = factor(cluster))) +
-      geom_col() +
-      geom_text(aes(label = label), vjust = -0.2, size = 4) +
-      scale_y_continuous(
-        limits = c(0, max(plot_table1$n) * 1.15),
-        expand = expansion(mult = c(0, 0.05))
-      ) +
-      coord_cartesian(clip = "off") +
-      labs(
-        title = "Number and Share of Countries in Each Cluster",
-        x = "Cluster",
-        y = "Count",
-        fill = "Cluster"
-      ) +
-      theme_minimal() +
-      theme(
-        plot.margin = margin(10, 30, 10, 10)
-      )
-  })
-  
-  output$cluster_heatmap_plot <- renderPlot({
-    plot_table2_scaled <- cluster_results()$country_features2_clean %>%
-      group_by(cluster) %>%
-      summarise(
-        avg_trade = mean(avg_trade, na.rm = TRUE),
-        growth_ratio = mean(growth_ratio, na.rm = TRUE),
-        cv_trade = mean(cv_trade, na.rm = TRUE),
-        seasonal_range = mean(seasonal_range, na.rm = TRUE),
-        avg_balance = mean(avg_balance, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-    plot_table2_scaled_num <- plot_table2_scaled %>%
-      select(-cluster) %>%
-      scale() %>%
-      as.data.frame()
-    
-    plot_table2_scaled_num$cluster <- plot_table2_scaled$cluster
-    
-    plot_table2_scaled_long <- plot_table2_scaled_num %>%
-      pivot_longer(cols = -cluster, names_to = "variable", values_to = "value")
-    
-    ggplot(plot_table2_scaled_long, aes(x = variable, y = cluster, fill = value)) +
-      geom_tile(color = "white") +
-      geom_text(aes(label = round(value, 2)), size = 3.5) +
-      scale_fill_gradient2(low = "#90CAF9", mid = "white", high = "#F28B82", midpoint = 0) +
-      scale_x_discrete(labels = c(
-        "avg_trade" = "Average Trade",
-        "growth_ratio" = "Log Growth",
-        "cv_trade" = "Volatility (CV)",
-        "seasonal_range" = "Seasonal Range",
-        "avg_balance" = "Balance"
-      )) +
-      labs(
-        title = "Standardised Cluster Characteristics Heatmap",
-        x = "Trade Indicator",
-        y = "Cluster",
-        fill = "Scaled Value"
-      ) +
-      theme_minimal()
-  })
-  
-  output$comparison_stat_plot <- renderPlot({
-    metric_labels <- c(
-      avg_trade = "Average Trade",
-      growth_ratio = "Growth Ratio",
-      seasonal_range = "Seasonal Range",
-      cv_trade = "Volatility (CV)",
-      avg_balance = "Trade Balance"
-    )
-    
-    plot_data <- cluster_results()$country_features2_clean %>%
-      mutate(selected_metric = .data[[input$comparison_metric]])
-    
-    ggbetweenstats(
-      data = plot_data,
-      x = cluster,
-      y = selected_metric,
-      type = "np",
-      pairwise.comparisons = TRUE,
-      pairwise.display = "s",
-      p.adjust.method = "fdr",
-      messages = FALSE,
-      xlab = "Cluster",
-      ylab = metric_labels[[input$comparison_metric]],
-      title = paste("Confirmatory Comparison of", metric_labels[[input$comparison_metric]], "by Cluster"),
-      centrality.label.args = list(size = 3)
-    )
-  })
-  
-  output$cluster_summary_table <- renderDT({
-    summary_table <- cluster_results()$country_features2_clean %>%
-      group_by(cluster) %>%
-      summarise(
-        n_countries = n(),
-        share_pct = round(100 * n() / nrow(cluster_results()$country_features2_clean), 1),
-        avg_trade = round(mean(avg_trade, na.rm = TRUE), 2),
-        growth_ratio = round(mean(growth_ratio, na.rm = TRUE), 2),
-        cv_trade = round(mean(cv_trade, na.rm = TRUE), 2),
-        seasonal_range = round(mean(seasonal_range, na.rm = TRUE), 2),
-        cluster_label = case_when(
-          cluster == "1" ~ "Large-scale and seasonal partners",
-          cluster == "2" ~ "Emerging and high growth partners",
-          cluster == "3" ~ "Mainstream lower-volatility partners",
-          TRUE ~ "Additional cluster"
-        ),
-        .groups = "drop"
-      ) %>%
-      distinct()
-    
-    datatable(
-      summary_table,
-      rownames = FALSE,
-      options = list(
-        pageLength = 5,
-        lengthChange = FALSE,
-        autoWidth = TRUE,
-        scrollX = TRUE
-      )
-    )
-  })
-  
-  # -----------------------------
-  # Page 2
-  # -----------------------------
-  output$monthly_trade_plot <- renderPlot({
-    metric_labels <- c(
-      avg_trade = "Average Monthly Trade",
-      avg_import = "Average Monthly Import",
-      avg_export = "Average Monthly Export",
-      avg_balance = "Average Monthly Balance"
-    )
-    
-    ggplot(
-      cluster_results()$monthly_cluster_summary,
-      aes(x = month, y = .data[[input$seasonal_metric]], color = cluster, group = cluster)
-    ) +
-      geom_line(linewidth = 1) +
-      geom_point(size = 2) +
-      scale_x_continuous(breaks = 1:12) +
-      labs(
-        title = paste(metric_labels[[input$seasonal_metric]], "Pattern by Cluster"),
-        x = "Month",
-        y = metric_labels[[input$seasonal_metric]],
-        color = "Cluster"
-      ) +
-      theme_minimal()
-  })
-  
-  output$cycle_plot <- renderPlot({
-    ggplot() +
-      geom_line(
-        data = cluster_results()$cluster_year_month,
-        aes(x = year, y = avg_trade, group = month),
-        colour = "black"
-      ) +
-      geom_hline(
-        data = cluster_results()$hline_data,
-        aes(yintercept = avgvalue),
-        linetype = 2,
-        colour = "red",
-        linewidth = 0.4
-      ) +
-      facet_grid(cluster ~ month) +
-      scale_x_continuous(breaks = seq(input$year_range[1], input$year_range[2], by = 3)) +
-      labs(title = "Cycle Plot of Monthly Trade by Cluster", x = "", y = "Average Monthly Trade") +
-      theme_minimal() +
-      theme(
-        axis.text.x = element_text(size = 6, angle = 45, hjust = 1),
-        strip.text = element_text(size = 10)
-      )
-  })
-  
-  output$seasonal_heatmap_plot <- renderPlot({
-    metric_labels <- c(
-      avg_trade = "Average Trade",
-      avg_import = "Average Import",
-      avg_export = "Average Export",
-      avg_balance = "Average Balance"
-    )
-    
-    ggplot(
-      cluster_results()$monthly_cluster_summary,
-      aes(x = factor(month), y = cluster, fill = .data[[input$seasonal_metric]])
-    ) +
-      geom_tile(color = "white") +
-      geom_text(aes(label = round(.data[[input$seasonal_metric]], 0)), size = 3) +
-      scale_fill_gradient(low = "#E3F2FD", high = "#1565C0") +
-      labs(
-        title = paste("Seasonal Heatmap of", metric_labels[[input$seasonal_metric]], "by Cluster and Month"),
-        x = "Month",
-        y = "Cluster",
-        fill = metric_labels[[input$seasonal_metric]]
-      ) +
-      theme_minimal()
-  })
-  
-  output$seasonal_range_stat_plot <- renderPlot({
-    ggbetweenstats(
-      data = cluster_results()$country_features2_clean,
-      x = cluster,
-      y = seasonal_range,
-      type = "np",
-      pairwise.comparisons = TRUE,
-      pairwise.display = "s",
-      p.adjust.method = "fdr",
-      messages = FALSE,
-      xlab = "Cluster",
-      ylab = "Seasonal Range",
-      title = "Confirmatory Comparison of Seasonal Range by Cluster",
-      centrality.label.args = list(size = 3)
-    )
-  })
-  
-  output$monthly_summary_table_output <- renderDT({
-    monthly_table <- cluster_results()$monthly_cluster_summary %>%
-      transmute(
-        cluster = cluster,
-        month = month,
-        avg_trade = round(avg_trade, 2),
-        avg_balance = round(avg_balance, 2)
-      )
-    
-    datatable(
-      monthly_table,
-      rownames = FALSE,
-      options = list(
-        pageLength = 6,
-        lengthChange = FALSE,
-        searching = FALSE,
-        info = FALSE,
-        scrollX = TRUE
-      )
-    )
-  })
-  
-  # -----------------------------
-  # Page 3
-  # -----------------------------
-  output$positioning_map_plot <- renderPlotly({
-    cf <- cluster_results()$country_features2_clean
-    
-    cf <- cf %>%
-      mutate(
-        highlight_flag = if_else(
-          input$highlight_cluster == "all" | as.character(cluster) == input$highlight_cluster,
-          "Highlighted",
-          "Background"
-        )
-      )
-    
-    p <- ggplot(
-      cf,
-      aes(
-        x = growth_ratio,
-        y = avg_trade,
-        size = .data[[input$bubble_size]],
-        color = factor(cluster),
-        alpha = highlight_flag,
-        text = paste0(
-          "Country: ", country,
-          "<br>Cluster: ", cluster,
-          "<br>Growth Ratio: ", round(growth_ratio, 2),
-          "<br>Average Trade: ", round(avg_trade, 2),
-          "<br>Seasonal Range: ", round(seasonal_range, 2),
-          "<br>Volatility (CV): ", round(cv_trade, 2),
-          "<br>Trade Balance: ", round(avg_balance, 2)
-        )
-      )
-    ) +
-      geom_point() +
-      scale_alpha_manual(values = c("Highlighted" = 0.85, "Background" = 0.15), guide = "none") +
-      geom_vline(
-        xintercept = mean(cf$growth_ratio, na.rm = TRUE),
-        linetype = "dashed",
-        color = "grey50"
-      ) +
-      geom_hline(
-        yintercept = mean(cf$avg_trade, na.rm = TRUE),
-        linetype = "dashed",
-        color = "grey50"
-      ) +
-      labs(
-        title = "Trade Partner Cluster Scatter Plot",
-        x = "Log Growth",
-        y = "Average Trade",
-        size = "Bubble Size",
-        color = "Cluster"
-      ) +
-      theme_minimal()
-    
-    ggplotly(p, tooltip = "text")
-  })
-  
-  output$cluster_definition_panel <- renderUI({
-    k_val <- as.numeric(input$k_clusters)
-    
-    if (k_val == 3) {
-      HTML(
-        "<h4>Cluster 1: Large-Scale and Seasonal Partners</h4>
-         <p>This group combines relatively high trade scale with stronger seasonal fluctuation, representing the core trade partners in the portfolio.</p>
-         <h4>Cluster 2: Emerging and High-Growth Partners</h4>
-         <p>This group shows stronger growth dynamics than current scale, appearing as rising trade partners with relatively stronger recent momentum.</p>
-         <h4>Cluster 3: Mainstream and Low-Volatility Partners</h4>
-         <p>This group contains the majority of countries, with more moderate trade scale, lower volatility, and more typical trade behaviour overall.</p>"
-      )
-    } else {
-      HTML(
-        "<h4>Cluster Interpretation</h4>
-         <p>The 4-cluster solution is shown for exploratory comparison. Final labels should be updated after inspecting the revised cluster heatmap, summary table, seasonal pattern plots, and positioning scatter plot.</p>"
-      )
-    }
+  output$cluster_plot <- renderPlot({
+    dat <- prepared_data()
+    make_cluster_trend_plot(dat$trend, input$selected_cluster, top_n = input$top_n)
   })
 }
 
-# -----------------------------
-# 4. Launch app
-# -----------------------------
 shinyApp(ui = ui, server = server)
-
